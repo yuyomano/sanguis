@@ -1,0 +1,299 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Search } from 'lucide-react'
+
+const BLOOD_LABELS: Record<string, string> = {
+  A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
+  AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
+}
+
+export default function NewBloodUnitPage() {
+  const router = useRouter()
+  const api = process.env.NEXT_PUBLIC_API_URL
+  const token = () => localStorage.getItem('sanguis_token')
+  const authHeaders = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
+
+  const [locations, setLocations] = useState<any[]>([])
+  const [donorSearch, setDonorSearch] = useState('')
+  const [donors, setDonors] = useState<any[]>([])
+  const [selectedDonor, setSelectedDonor] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [searching, setSearching] = useState(false)
+
+  const [form, setForm] = useState({
+    bloodType: '',
+    rhFactor: 'true',
+    productType: 'WHOLE_BLOOD',
+    volumeMl: '450',
+    bagNumber: '',
+    storageLocationId: '',
+    storageShelf: '',
+    collectionDate: new Date().toISOString().split('T')[0],
+  })
+
+  useEffect(() => {
+    const tok = token()
+    fetch(`${api}/blood-units/locations`, { headers: { Authorization: `Bearer ${tok}` } })
+      .then(r => r.json()).then(setLocations).catch(() => {})
+
+    // Auto-generate bag number
+    const pad = (n: number) => String(n).padStart(4, '0')
+    const now = new Date()
+    setForm(f => ({ ...f, bagNumber: `SNG-${now.getFullYear()}-${pad(Math.floor(Math.random() * 9999))}` }))
+
+    // Pre-fill donor from query param
+    const params = new URLSearchParams(window.location.search)
+    const prefilledDonorId = params.get('donorId')
+    if (prefilledDonorId) {
+      fetch(`${api}/donors/${prefilledDonorId}`, { headers: { Authorization: `Bearer ${tok}` } })
+        .then(r => r.json())
+        .then(donor => {
+          if (donor?.id) {
+            setSelectedDonor(donor)
+            setDonorSearch(donor.name)
+            setForm(f => ({ ...f, bloodType: donor.bloodType, rhFactor: String(donor.rhFactor) }))
+          }
+        })
+        .catch(() => {})
+    }
+  }, [])
+
+  async function searchDonors() {
+    if (!donorSearch.trim()) return
+    setSearching(true)
+    try {
+      const res = await fetch(`${api}/donors?search=${encodeURIComponent(donorSearch)}&limit=5`, {
+        headers: { Authorization: `Bearer ${token()}` },
+      })
+      const data = await res.json()
+      setDonors(data.donors || [])
+    } catch {}
+    setSearching(false)
+  }
+
+  function selectDonor(donor: any) {
+    setSelectedDonor(donor)
+    setDonors([])
+    setDonorSearch(donor.name)
+    setForm(f => ({ ...f, bloodType: donor.bloodType, rhFactor: String(donor.rhFactor) }))
+  }
+
+  function set(key: string, value: string) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedDonor) { setError('Selecciona un donante'); return }
+    setLoading(true)
+    setError(null)
+
+    const body: Record<string, any> = {
+      donorId: selectedDonor.id,
+      bagNumber: form.bagNumber,
+      bloodType: form.bloodType,
+      rhFactor: form.rhFactor === 'true',
+      productType: form.productType,
+      volumeMl: parseInt(form.volumeMl, 10),
+      collectionDate: new Date(form.collectionDate).toISOString(),
+    }
+    if (form.storageLocationId) body.storageLocationId = form.storageLocationId
+    if (form.storageShelf) body.storageShelf = form.storageShelf
+
+    try {
+      const res = await fetch(`${api}/blood-units`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(Array.isArray(data.message) ? data.message.join(', ') : data.message)
+        return
+      }
+      router.push('/inventory')
+    } catch {
+      setError('Error de red. Verifica que la API esté corriendo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="p-8 max-w-2xl">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
+        <ArrowLeft size={16} /> Volver a Inventario
+      </button>
+
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Registrar Donación</h1>
+        <p className="text-gray-500 text-sm mt-1">Nueva unidad de sangre recolectada</p>
+      </div>
+
+      <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        {/* Donor search */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Donante *</label>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={donorSearch}
+              onChange={(e) => { setDonorSearch(e.target.value); if (!e.target.value) setSelectedDonor(null) }}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchDonors())}
+              placeholder="Buscar por nombre, cédula o teléfono (Enter para buscar)"
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            />
+          </div>
+          {searching && <p className="text-xs text-gray-400 mt-1">Buscando...</p>}
+          {donors.length > 0 && (
+            <div className="mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              {donors.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => selectDonor(d)}
+                  className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between text-sm border-b border-gray-100 last:border-0"
+                >
+                  <span className="font-medium text-gray-800">{d.name}</span>
+                  <span className="text-xs text-gray-500">{d.idNumber} · {BLOOD_LABELS[d.bloodType]}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {selectedDonor && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg">
+              ✓ {selectedDonor.name} · {BLOOD_LABELS[selectedDonor.bloodType]} · {selectedDonor.category}
+            </div>
+          )}
+        </div>
+
+        {/* Bag number */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Número de bolsa *</label>
+          <input
+            required
+            value={form.bagNumber}
+            onChange={(e) => set('bagNumber', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+          />
+        </div>
+
+        {/* Blood type + Rh */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de sangre *</label>
+            <select
+              required
+              value={form.bloodType}
+              onChange={(e) => set('bloodType', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            >
+              <option value="">Seleccionar</option>
+              {Object.entries(BLOOD_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Factor Rh *</label>
+            <select
+              value={form.rhFactor}
+              onChange={(e) => set('rhFactor', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            >
+              <option value="true">Positivo (+)</option>
+              <option value="false">Negativo (−)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Product type + Volume */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
+            <select
+              value={form.productType}
+              onChange={(e) => {
+                const defaults: Record<string, string> = { WHOLE_BLOOD: '450', PLATELETS: '300', PLASMA: '250' }
+                set('productType', e.target.value)
+                set('volumeMl', defaults[e.target.value] || '450')
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            >
+              <option value="WHOLE_BLOOD">Sangre Entera</option>
+              <option value="PLATELETS">Plaquetas</option>
+              <option value="PLASMA">Plasma</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Volumen (mL) *</label>
+            <input
+              required
+              type="number"
+              min="100"
+              value={form.volumeMl}
+              onChange={(e) => set('volumeMl', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            />
+          </div>
+        </div>
+
+        {/* Collection date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de recolección *</label>
+          <input
+            required
+            type="date"
+            value={form.collectionDate}
+            onChange={(e) => set('collectionDate', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+          />
+        </div>
+
+        {/* Storage */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación de almacenamiento</label>
+            <select
+              value={form.storageLocationId}
+              onChange={(e) => set('storageLocationId', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            >
+              <option value="">Sin asignar</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estante / Posición</label>
+            <input
+              value={form.storageShelf}
+              onChange={(e) => set('storageShelf', e.target.value)}
+              placeholder="Ej: A-01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={() => router.back()}
+            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading}
+            className="flex-1 px-4 py-2.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+            {loading ? 'Registrando...' : 'Registrar donación'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

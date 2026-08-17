@@ -1,0 +1,561 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
+
+enum IdType {
+  CEDULA
+  PASSPORT
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum DonorCategory {
+  CASUAL
+  RECURRENT
+  VIP
+}
+
+enum ProductType {
+  WHOLE_BLOOD
+  PLATELETS
+  PLASMA
+}
+
+enum BloodUnitStatus {
+  COLLECTED
+  TESTING
+  QUARANTINE
+  APPROVED
+  REJECTED
+  STORED
+  ALLOCATED
+  USED
+  DISCARDED
+}
+
+enum TestLabType {
+  OWN
+  EXTERNAL
+}
+
+enum EventType {
+  FIXED
+  MOBILE_TRUCK
+}
+
+enum EventStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CarrierType {
+  OWN
+  THIRD_PARTY
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+enum PointTransactionType {
+  DONATION
+  REFERRAL
+  FREQUENT_MILESTONE
+  BONUS
+  REDEMPTION
+  ADJUSTMENT
+}
+
+enum PointRuleType {
+  DONATION
+  REFERRAL
+  FREQUENT_MILESTONE
+  BONUS
+}
+
+enum FinancialRecordType {
+  COST
+  REVENUE
+}
+
+enum FinancialCategory {
+  COLLECTION
+  TESTING
+  STORAGE
+  LOGISTICS
+  REWARD_REDEMPTION
+  PARTNER_BILLING
+  OTHER
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  LAB_TECH
+  LOGISTICS
+  PARTNER
+}
+
+enum NotificationType {
+  WHATSAPP
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+}
+
+// ─── AUTH / USERS ─────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(ADMIN)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+// ─── DONORS ──────────────────────────────────────────────────────────────────
+
+model Donor {
+  id               String        @id @default(uuid())
+  name             String
+  idType           IdType
+  idNumber         String        @unique
+  phone            String
+  email            String?       @unique
+  bloodType        BloodType
+  rhFactor         Boolean
+  reactiveStatus   Json?
+  category         DonorCategory @default(CASUAL)
+  availableTimes   Json?
+  totalDonations   Int           @default(0)
+  lastDonationDate DateTime?
+  isPriorityDonor  Boolean       @default(false)
+  pointsBalance    Int           @default(0)
+  passwordHash     String
+  referralCode     String        @unique @default(uuid())
+  photoUrl         String?
+  adminNotes       String?
+  fcmToken         String?
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  referredById     String?
+  referredBy       Donor?        @relation("DonorReferrals", fields: [referredById], references: [id])
+  referrals        Donor[]       @relation("DonorReferrals")
+
+  bloodUnits       BloodUnit[]
+  appointments     Appointment[]
+  pointTransactions PointTransaction[]
+  redemptions      Redemption[]
+  notifications    Notification[]
+
+  @@map("donors")
+}
+
+// ─── BLOOD UNITS ─────────────────────────────────────────────────────────────
+
+model StorageLocation {
+  id          String   @id @default(uuid())
+  name        String
+  address     String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  bloodUnits  BloodUnit[]
+
+  @@map("storage_locations")
+}
+
+model BloodUnit {
+  id                String          @id @default(uuid())
+  bagNumber         String          @unique
+  donorId           String
+  donor             Donor           @relation(fields: [donorId], references: [id])
+  collectionDate    DateTime
+  bloodType         BloodType
+  rhFactor          Boolean
+  productType       ProductType
+  volumeMl          Int
+  status            BloodUnitStatus @default(COLLECTED)
+  storageLocationId String?
+  storageLocation   StorageLocation? @relation(fields: [storageLocationId], references: [id])
+  storageShelf      String?
+  expirationDate    DateTime?
+  usedAt            DateTime?
+  usedForNote       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  testResults       TestResult[]
+  deliveryItems     DeliveryOrderItem[]
+  financialRecords  FinancialRecord[]
+
+  @@map("blood_units")
+}
+
+// ─── TESTING ─────────────────────────────────────────────────────────────────
+
+model ExternalLab {
+  id          String   @id @default(uuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  apiEndpoint String?
+  apiKey      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  testResults TestResult[]
+
+  @@map("external_labs")
+}
+
+model TestResult {
+  id              String      @id @default(uuid())
+  bloodUnitId     String
+  bloodUnit       BloodUnit   @relation(fields: [bloodUnitId], references: [id])
+  labType         TestLabType
+  externalLabId   String?
+  externalLab     ExternalLab? @relation(fields: [externalLabId], references: [id])
+  technicianId    String?
+  testDate        DateTime    @default(now())
+  resultDate      DateTime?
+  results         Json?
+  isViable        Boolean?
+  notes           String?
+  sharedWithDonor Boolean     @default(false)
+  sharedAt        DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("test_results")
+}
+
+// ─── DONATION EVENTS ─────────────────────────────────────────────────────────
+
+model DonationEvent {
+  id              String      @id @default(uuid())
+  name            String
+  type            EventType
+  locationAddress String
+  latitude        Float?
+  longitude       Float?
+  startDatetime   DateTime
+  endDatetime     DateTime
+  capacity        Int
+  registeredCount Int         @default(0)
+  status          EventStatus @default(SCHEDULED)
+  description     String?
+  imageUrl        String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  appointments    Appointment[]
+
+  @@map("donation_events")
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  donorId       String
+  donor         Donor             @relation(fields: [donorId], references: [id])
+  eventId       String
+  event         DonationEvent     @relation(fields: [eventId], references: [id])
+  scheduledTime DateTime
+  qrCode        String            @unique @default(uuid())
+  status        AppointmentStatus @default(SCHEDULED)
+  checkedInAt   DateTime?
+  completedAt   DateTime?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@map("appointments")
+}
+
+// ─── LOGISTICS ────────────────────────────────────────────────────────────────
+
+model Vehicle {
+  id             String   @id @default(uuid())
+  plate          String   @unique
+  type           String
+  capacityUnits  Int
+  driverName     String
+  driverPhone    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  deliveryOrders DeliveryOrder[]
+
+  @@map("vehicles")
+}
+
+model DeliveryProtocol {
+  id                   String   @id @default(uuid())
+  name                 String
+  requirements         Json
+  tempRangeMinC        Float
+  tempRangeMaxC        Float
+  maxTransitHours      Int
+  handlingInstructions String?
+  createdAt            DateTime @default(now())
+
+  deliveryOrders       DeliveryOrder[]
+
+  @@map("delivery_protocols")
+}
+
+model DeliveryOrder {
+  id                  String           @id @default(uuid())
+  destinationName     String
+  destinationAddress  String
+  carrierType         CarrierType
+  vehicleId           String?
+  vehicle             Vehicle?         @relation(fields: [vehicleId], references: [id])
+  thirdPartyCarrier   String?
+  thirdPartyGuide     String?
+  protocolId          String?
+  protocol            DeliveryProtocol? @relation(fields: [protocolId], references: [id])
+  baseCost            Float            @default(0)
+  lastMileCost        Float            @default(0)
+  chainOfCustody      Json             @default("[]")
+  status              DeliveryStatus   @default(PENDING)
+  dispatchedAt        DateTime?
+  deliveredAt         DateTime?
+  notes               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  items               DeliveryOrderItem[]
+  financialRecords    FinancialRecord[]
+
+  @@map("delivery_orders")
+}
+
+model DeliveryOrderItem {
+  id              String        @id @default(uuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id])
+  bloodUnitId     String
+  bloodUnit       BloodUnit     @relation(fields: [bloodUnitId], references: [id])
+
+  @@map("delivery_order_items")
+}
+
+// ─── REWARDS ─────────────────────────────────────────────────────────────────
+
+model PointRule {
+  id          String        @id @default(uuid())
+  type        PointRuleType
+  name        String
+  points      Int
+  conditions  Json          @default("{}")
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("point_rules")
+}
+
+model PointTransaction {
+  id           String               @id @default(uuid())
+  donorId      String
+  donor        Donor                @relation(fields: [donorId], references: [id])
+  type         PointTransactionType
+  points       Int
+  balanceAfter Int
+  referenceId  String?
+  description  String
+  createdAt    DateTime             @default(now())
+
+  @@map("point_transactions")
+}
+
+model PartnerEstablishment {
+  id                String       @id @default(uuid())
+  name              String
+  category          String
+  taxId             String?
+  taxDeductionPct   Float        @default(0)
+  address           String?
+  phone             String?
+  email             String?
+  logoUrl           String?
+  availableRewards  Json         @default("[]")
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  redemptions       Redemption[]
+
+  @@map("partner_establishments")
+}
+
+model Redemption {
+  id           String               @id @default(uuid())
+  donorId      String
+  donor        Donor                @relation(fields: [donorId], references: [id])
+  partnerId    String
+  partner      PartnerEstablishment @relation(fields: [partnerId], references: [id])
+  pointsUsed   Int
+  dopValue     Float
+  receiptNumber String?
+  taxEligible  Boolean              @default(true)
+  redeemedAt   DateTime             @default(now())
+
+  @@map("redemptions")
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+model NotificationTemplate {
+  id        String           @id @default(uuid())
+  name      String           @unique
+  type      NotificationType
+  subject   String?
+  bodyEs    String
+  bodyEn    String?
+  variables Json             @default("[]")
+  isActive  Boolean          @default(true)
+  createdAt DateTime         @default(now())
+
+  @@map("notification_templates")
+}
+
+model Notification {
+  id          String             @id @default(uuid())
+  donorId     String?
+  donor       Donor?             @relation(fields: [donorId], references: [id])
+  type        NotificationType
+  templateId  String?
+  recipient   String
+  subject     String?
+  body        String
+  status      NotificationStatus @default(PENDING)
+  externalId  String?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  error       String?
+  createdAt   DateTime           @default(now())
+
+  @@map("notifications")
+}
+
+// ─── FINANCE ─────────────────────────────────────────────────────────────────
+
+model FinancialRecord {
+  id            String              @id @default(uuid())
+  type          FinancialRecordType
+  category      FinancialCategory
+  amount        Float
+  currency      String              @default("DOP")
+  date          DateTime
+  bloodUnitId   String?
+  bloodUnit     BloodUnit?          @relation(fields: [bloodUnitId], references: [id])
+  deliveryId    String?
+  delivery      DeliveryOrder?      @relation(fields: [deliveryId], references: [id])
+  referenceId   String?
+  description   String?
+  notes         String?
+  createdAt     DateTime            @default(now())
+
+  @@map("financial_records")
+}
+
+// ─── BADGES / GAMIFICATION ───────────────────────────────────────────────────
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  iconUrl     String?
+  condition   Json
+  createdAt   DateTime @default(now())
+
+  donorBadges DonorBadge[]
+
+  @@map("badges")
+}
+
+model DonorBadge {
+  id        String   @id @default(uuid())
+  donorId   String
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([donorId, badgeId])
+  @@map("donor_badges")
+}
+
+// ─── COLD CHAIN / TEMP LOG ────────────────────────────────────────────────────
+
+model TemperatureLog {
+  id              String   @id @default(uuid())
+  deliveryOrderId String?
+  storageLocationId String?
+  tempCelsius     Float
+  recordedAt      DateTime @default(now())
+  recordedBy      String?
+  notes           String?
+
+  @@map("temperature_logs")
+}
+
+// ─── EMERGENCY ALERTS ────────────────────────────────────────────────────────
+
+model EmergencyAlert {
+  id             String    @id @default(uuid())
+  bloodType      BloodType
+  productType    ProductType
+  urgencyLevel   Int       @default(1)
+  message        String
+  sentAt         DateTime  @default(now())
+  resolvedAt     DateTime?
+  targetReachedCount Int   @default(0)
+
+  @@map("emergency_alerts")
+}
