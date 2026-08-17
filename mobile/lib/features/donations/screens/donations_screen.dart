@@ -6,8 +6,8 @@ import '../../../core/theme.dart';
 
 final donationsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.read(apiClientProvider);
-  final res = await dio.get('/blood-units', queryParameters: {'limit': 50});
-  return (res.data['units'] as List<dynamic>?) ?? [];
+  final res = await dio.get('/blood-units/mine');
+  return res.data as List<dynamic>;
 });
 
 const _statusLabels = {

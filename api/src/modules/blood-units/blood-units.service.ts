@@ -113,6 +113,18 @@ export class BloodUnitsService {
     return { units, total, page, limit };
   }
 
+  async findByDonor(donorId: string) {
+    return this.prisma.bloodUnit.findMany({
+      where: { donorId },
+      orderBy: { collectionDate: 'desc' },
+      include: {
+        storageLocation: { select: { name: true } },
+        testResults: { orderBy: { createdAt: 'desc' }, take: 1, select: { isViable: true, createdAt: true } },
+        deliveryItems: { include: { deliveryOrder: { select: { status: true, deliveredAt: true, destinationName: true } } }, take: 1 },
+      },
+    });
+  }
+
   async findOne(id: string) {
     const unit = await this.prisma.bloodUnit.findUnique({
       where: { id },
