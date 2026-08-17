@@ -18,6 +18,14 @@ export class RewardsController {
 
   @ApiBearerAuth()
   @UseGuards(DonorJwtAuthGuard)
+  @Get('me/transactions')
+  @ApiOperation({ summary: 'Historial de transacciones del donante autenticado' })
+  getMyTransactions(@Request() req: any) {
+    return this.rewardsService.getDonorTransactions(req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(DonorJwtAuthGuard)
   @Post('redeem')
   @ApiOperation({ summary: 'Canjear puntos en establecimiento aliado' })
   redeem(@Request() req: any, @Body() dto: RedeemPointsDto) {

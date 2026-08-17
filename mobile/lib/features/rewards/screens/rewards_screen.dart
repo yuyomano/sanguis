@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api_client.dart';
+import '../../../core/donor_provider.dart';
 import '../../../core/theme.dart';
 
 final partnersProvider = FutureProvider<List<dynamic>>((ref) async {
@@ -9,12 +10,39 @@ final partnersProvider = FutureProvider<List<dynamic>>((ref) async {
   return res.data as List<dynamic>;
 });
 
+final myTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
+  final dio = ref.read(apiClientProvider);
+  final res = await dio.get('/rewards/me/transactions');
+  return res.data as List<dynamic>;
+});
+
+const _txTypeLabels = {
+  'DONATION': 'Donación',
+  'REFERRAL': 'Referido',
+  'FREQUENT_MILESTONE': 'Bonus',
+  'REDEMPTION': 'Canje',
+  'MANUAL': 'Ajuste',
+};
+
+const _txTypeIcons = {
+  'DONATION': Icons.water_drop,
+  'REFERRAL': Icons.person_add,
+  'FREQUENT_MILESTONE': Icons.star,
+  'REDEMPTION': Icons.redeem,
+  'MANUAL': Icons.edit,
+};
+
 class RewardsScreen extends ConsumerWidget {
   const RewardsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final partners = ref.watch(partnersProvider);
+    final profileAsync = ref.watch(donorProfileProvider);
+    final partnersAsync = ref.watch(partnersProvider);
+    final txAsync = ref.watch(myTransactionsProvider);
+
+    final balance = profileAsync.value?['pointsBalance'] as int? ?? 0;
+    final category = profileAsync.value?['category'] as String? ?? '';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rewards')),
@@ -26,14 +54,42 @@ class RewardsScreen extends ConsumerWidget {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [kBloodRed, kBloodRedDark]),
+                gradient: const LinearGradient(
+                  colors: [kBloodRed, kBloodRedDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(children: [
                 const Text('Tu saldo de puntos', style: TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(height: 8),
-                const Text('—', style: TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.bold)),
+                profileAsync.when(
+                  loading: () => const SizedBox(
+                    height: 52,
+                    child: Center(child: CircularProgressIndicator(color: Colors.white54, strokeWidth: 2)),
+                  ),
+                  error: (_, __) => const Text('—', style: TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.bold)),
+                  data: (_) => Text(
+                    balance.toString(),
+                    style: const TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.bold),
+                  ),
+                ),
                 const Text('puntos', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                if (category.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _categoryLabel(category),
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -47,25 +103,62 @@ class RewardsScreen extends ConsumerWidget {
             ),
           ),
 
+          // Recent transactions
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text('Movimientos recientes', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            ),
+          ),
+
+          txAsync.when(
+            loading: () => const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            error: (_, __) => const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text('No se pudo cargar el historial', style: TextStyle(color: Colors.grey)),
+              ),
+            ),
+            data: (txList) {
+              if (txList.isEmpty) {
+                return const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text('Sin movimientos todavía', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  ),
+                );
+              }
+              final recent = txList.take(5).toList();
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => _TransactionTile(tx: recent[i] as Map<String, dynamic>),
+                  childCount: recent.length,
+                ),
+              );
+            },
+          ),
+
           // Partners
           const SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text('Establecimientos Aliados', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
             ),
           ),
 
-          partners.when(
+          partnersAsync.when(
             loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
             error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
             data: (list) => SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    final partner = list[i] as Map<String, dynamic>;
-                    return _PartnerCard(partner: partner);
-                  },
+                  (context, i) => _PartnerCard(partner: list[i] as Map<String, dynamic>),
                   childCount: list.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -77,6 +170,63 @@ class RewardsScreen extends ConsumerWidget {
 
           const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
         ],
+      ),
+    );
+  }
+
+  String _categoryLabel(String cat) {
+    switch (cat) {
+      case 'CASUAL': return 'Donante Casual';
+      case 'RECURRENT': return 'Donante Recurrente';
+      case 'VIP': return '⭐ Donante VIP';
+      default: return cat;
+    }
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  final Map<String, dynamic> tx;
+  const _TransactionTile({required this.tx});
+
+  @override
+  Widget build(BuildContext context) {
+    final type = tx['type'] as String? ?? '';
+    final points = tx['points'] as int? ?? 0;
+    final isPositive = points > 0;
+    final date = tx['createdAt'] != null
+        ? DateTime.tryParse(tx['createdAt'] as String)
+        : null;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: CircleAvatar(
+        radius: 20,
+        backgroundColor: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+        child: Icon(
+          _txTypeIcons[type] ?? Icons.swap_horiz,
+          color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+          size: 18,
+        ),
+      ),
+      title: Text(
+        tx['description'] as String? ?? _txTypeLabels[type] ?? type,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: date != null
+          ? Text(
+              '${date.day}/${date.month}/${date.year}',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            )
+          : null,
+      trailing: Text(
+        '${isPositive ? '+' : ''}$points pts',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+        ),
       ),
     );
   }
