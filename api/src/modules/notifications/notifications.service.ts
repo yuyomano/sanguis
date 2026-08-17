@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { WhatsappService } from './whatsapp.service';
 import { EmailService } from './email.service';
+import { FcmService } from './fcm.service';
 import { NotificationStatus, NotificationType, BloodType, ProductType } from '@prisma/client';
 import dayjs from 'dayjs';
 
@@ -13,6 +14,7 @@ export class NotificationsService {
     private prisma: PrismaService,
     private whatsapp: WhatsappService,
     private email: EmailService,
+    private fcm: FcmService,
   ) {}
 
   async broadcastEvent(eventId: string) {
@@ -21,11 +23,19 @@ export class NotificationsService {
 
     const donors = await this.prisma.donor.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, phone: true, email: true, referralCode: true },
+      select: { id: true, name: true, phone: true, email: true, referralCode: true, fcmToken: true },
     });
 
     const results = { sent: 0, failed: 0 };
     const formattedDate = dayjs(event.startDatetime).format('DD/MM/YYYY [a las] HH:mm');
+
+    // Push FCM a todos los donantes con token registrado
+    const tokens = donors.map((d) => d.fcmToken).filter(Boolean) as string[];
+    await this.fcm.sendToTokens(tokens, {
+      title: `🩸 Nuevo evento: ${event.name}`,
+      body: `${formattedDate} — ${event.locationAddress}`,
+      data: { type: 'event', id: eventId },
+    });
 
     for (const donor of donors) {
       try {
@@ -65,17 +75,25 @@ export class NotificationsService {
   }
 
   async sendEmergencyAlert(bloodType: BloodType, productType: ProductType, message: string) {
-    // Find compatible donors
     const compatibleTypes = this.getCompatibleDonors(bloodType);
     const donors = await this.prisma.donor.findMany({
       where: { bloodType: { in: compatibleTypes }, isActive: true },
-      select: { id: true, name: true, phone: true },
+      select: { id: true, name: true, phone: true, fcmToken: true },
     });
 
     const alert = await this.prisma.emergencyAlert.create({
       data: { bloodType, productType, message, targetReachedCount: donors.length },
     });
 
+    // FCM push (alta prioridad)
+    const tokens = donors.map((d) => d.fcmToken).filter(Boolean) as string[];
+    await this.fcm.sendToTokens(tokens, {
+      title: '🚨 Alerta Urgente — Sanguis',
+      body: message,
+      data: { type: 'emergency' },
+    });
+
+    // WhatsApp como canal de respaldo
     for (const donor of donors) {
       await this.whatsapp
         .sendTextMessage(donor.phone, `🚨 *ALERTA URGENTE — Sanguis*\n\n${message}\n\nTu tipo de sangre es compatible. ¿Puedes donar hoy?`)
