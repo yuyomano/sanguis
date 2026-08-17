@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardsService } from './rewards.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -14,6 +14,30 @@ export class RewardsController {
   @ApiOperation({ summary: 'Listar establecimientos aliados' })
   getPartners() {
     return this.rewardsService.getPartners();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('partners')
+  @ApiOperation({ summary: 'Crear establecimiento aliado (admin)' })
+  createPartner(@Body() body: any) {
+    return this.rewardsService.createPartner(body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('partners/:id')
+  @ApiOperation({ summary: 'Actualizar establecimiento aliado (admin)' })
+  updatePartner(@Param('id') id: string, @Body() body: any) {
+    return this.rewardsService.updatePartner(id, body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('redemptions')
+  @ApiOperation({ summary: 'Historial de canjes (admin)' })
+  getRedemptions(@Query('page') page: string, @Query('limit') limit: string) {
+    return this.rewardsService.getRedemptions(page, limit);
   }
 
   @ApiBearerAuth()

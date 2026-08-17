@@ -147,9 +147,42 @@ export class RewardsService {
 
   async getPartners() {
     return this.prisma.partnerEstablishment.findMany({
-      where: { isActive: true },
       orderBy: { name: 'asc' },
     });
+  }
+
+  async createPartner(data: {
+    name: string; category: string; taxId?: string; taxDeductionPct?: number;
+    address?: string; phone?: string; email?: string; availableRewards?: any;
+  }) {
+    return this.prisma.partnerEstablishment.create({ data });
+  }
+
+  async updatePartner(id: string, data: {
+    name?: string; category?: string; taxId?: string; taxDeductionPct?: number;
+    address?: string; phone?: string; email?: string; availableRewards?: any; isActive?: boolean;
+  }) {
+    const partner = await this.prisma.partnerEstablishment.findUnique({ where: { id } });
+    if (!partner) throw new NotFoundException('Socio no encontrado');
+    return this.prisma.partnerEstablishment.update({ where: { id }, data });
+  }
+
+  async getRedemptions(page: any = 1, limit: any = 20) {
+    page = Math.max(1, parseInt(page, 10) || 1);
+    limit = Math.max(1, parseInt(limit, 10) || 20);
+    const [redemptions, total] = await Promise.all([
+      this.prisma.redemption.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { redeemedAt: 'desc' },
+        include: {
+          donor: { select: { name: true, idNumber: true } },
+          partner: { select: { name: true, category: true } },
+        },
+      }),
+      this.prisma.redemption.count(),
+    ]);
+    return { redemptions, total, page, limit };
   }
 
   async getDonorTransactions(donorId: string) {

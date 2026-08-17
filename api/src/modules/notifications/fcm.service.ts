@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
 export interface FcmPayload {
   title: string;
@@ -10,7 +11,7 @@ export interface FcmPayload {
 @Injectable()
 export class FcmService implements OnModuleInit {
   private readonly logger = new Logger(FcmService.name);
-  private initialized = false;
+  private app: App | null = null;
 
   onModuleInit() {
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -20,10 +21,9 @@ export class FcmService implements OnModuleInit {
     }
     try {
       const serviceAccount = JSON.parse(raw);
-      if (!admin.apps.length) {
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-      }
-      this.initialized = true;
+      this.app = getApps().length
+        ? getApps()[0]
+        : initializeApp({ credential: cert(serviceAccount) });
       this.logger.log('Firebase Admin SDK inicializado');
     } catch (e) {
       this.logger.error('Error inicializando Firebase Admin — push FCM deshabilitado', e);
@@ -31,9 +31,9 @@ export class FcmService implements OnModuleInit {
   }
 
   async sendToToken(token: string, payload: FcmPayload): Promise<void> {
-    if (!this.initialized) return;
+    if (!this.app) return;
     try {
-      await admin.messaging().send({
+      await getMessaging(this.app).send({
         token,
         notification: { title: payload.title, body: payload.body },
         data: payload.data,
@@ -46,11 +46,11 @@ export class FcmService implements OnModuleInit {
   }
 
   async sendToTokens(tokens: string[], payload: FcmPayload): Promise<void> {
-    if (!this.initialized || tokens.length === 0) return;
-    const chunks = this.chunk(tokens, 500); // FCM multicast limit
+    if (!this.app || tokens.length === 0) return;
+    const chunks = this.chunk(tokens, 500);
     for (const chunk of chunks) {
       try {
-        const res = await admin.messaging().sendEachForMulticast({
+        const res = await getMessaging(this.app).sendEachForMulticast({
           tokens: chunk,
           notification: { title: payload.title, body: payload.body },
           data: payload.data,

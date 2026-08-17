@@ -1,6 +1,7 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { RegisterDonorDto } from './dto/register-donor.dto';
 import { LoginDonorDto } from './dto/login-donor.dto';
@@ -36,5 +37,19 @@ export class AuthController {
   @ApiOperation({ summary: 'Renovar access token' })
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refreshToken(dto.refreshToken);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/status')
+  @ApiOperation({ summary: 'Estado de integraciones del sistema (admin)' })
+  getSystemStatus() {
+    return {
+      whatsapp: !!(process.env.META_WHATSAPP_TOKEN && process.env.META_PHONE_NUMBER_ID),
+      sendgrid: !!process.env.SENDGRID_API_KEY,
+      firebase: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
+      database: true,
+      environment: process.env.NODE_ENV || 'development',
+    };
   }
 }
