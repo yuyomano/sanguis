@@ -15,6 +15,7 @@ import {
   DollarSign,
   Settings,
   LogOut,
+  FileBarChart,
 } from 'lucide-react'
 
 const nav = [
@@ -24,9 +25,10 @@ const nav = [
   { href: '/testing', label: 'Laboratorio', icon: FlaskConical },
   { href: '/events', label: 'Eventos', icon: CalendarDays },
   { href: '/logistics', label: 'Logística', icon: Truck },
-  { href: '/rewards', label: 'Rewards & Socios', icon: Gift },
+  { href: '/rewards', label: 'Socios y Canjes', icon: Gift },
   { href: '/notifications', label: 'Notificaciones', icon: Bell },
   { href: '/finance', label: 'Finanzas', icon: DollarSign },
+  { href: '/reports', label: 'Reportes SESPAS', icon: FileBarChart },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ]
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardsService } from './rewards.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -62,5 +62,43 @@ export class RewardsController {
   @ApiOperation({ summary: 'Historial de transacciones de puntos del donante' })
   getTransactions(@Param('donorId') donorId: string) {
     return this.rewardsService.getDonorTransactions(donorId);
+  }
+
+  @Get('badges')
+  @ApiOperation({ summary: 'Listar insignias de gamificación' })
+  getBadges() {
+    return this.rewardsService.getBadges();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('badges')
+  @ApiOperation({ summary: 'Crear insignia (admin)' })
+  createBadge(@Body() body: any) {
+    return this.rewardsService.createBadge(body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete('badges/:id')
+  @ApiOperation({ summary: 'Eliminar insignia (admin)' })
+  deleteBadge(@Param('id') id: string) {
+    return this.rewardsService.deleteBadge(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('donors/:donorId/badges')
+  @ApiOperation({ summary: 'Otorgar insignia a donante (admin)' })
+  awardBadge(@Param('donorId') donorId: string, @Body() body: { badgeId: string }) {
+    return this.rewardsService.awardBadge(donorId, body.badgeId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('donors/:donorId/badges')
+  @ApiOperation({ summary: 'Ver insignias de un donante' })
+  getDonorBadges(@Param('donorId') donorId: string) {
+    return this.rewardsService.getDonorBadges(donorId);
   }
 }

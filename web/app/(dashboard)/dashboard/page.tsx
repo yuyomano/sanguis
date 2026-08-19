@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Users, Droplets, AlertTriangle, Calendar, TrendingUp, Activity } from 'lucide-react'
+import { fmtDOP } from '@/lib/fmt'
 
 const BLOOD_TYPE_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-',
@@ -119,8 +120,8 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Ingresos del Mes"
-          value={`RD$ ${(stats?.finance.revenue ?? 0).toLocaleString()}`}
-          subtitle={`Costos: RD$ ${(stats?.finance.costs ?? 0).toLocaleString()}`}
+          value={fmtDOP(stats?.finance.revenue ?? 0)}
+          subtitle={`Costos: ${fmtDOP(stats?.finance.costs ?? 0)}`}
           icon={TrendingUp}
           color="green"
         />
@@ -133,15 +134,20 @@ export default function DashboardPage() {
           Inventario por Tipo de Sangre
         </h2>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((type) => (
-            <div
-              key={type}
-              className="text-center p-3 rounded-lg border border-gray-200 hover:border-blood-300 transition-colors"
-            >
-              <p className="text-lg font-bold text-blood-600">{type}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.inventory.byBloodType?.[type] ?? '—'}</p>
-            </div>
-          ))}
+          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((type) => {
+            const count = stats?.inventory.byBloodType?.[type] ?? 0
+            return (
+              <div
+                key={type}
+                className="text-center p-3 rounded-lg border border-gray-200 hover:border-blood-300 transition-colors"
+              >
+                <p className="text-lg font-bold text-blood-600">{type}</p>
+                <p className={`text-xs mt-1 font-medium ${count === 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                  {count}
+                </p>
+              </div>
+            )
+          })}
         </div>
       </div>
 

@@ -50,6 +50,14 @@ class HomeScreen extends ConsumerWidget {
           data: (donor) => _buildContent(context, donor),
         ),
       ),
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: 'notifications',
+        backgroundColor: Colors.white,
+        foregroundColor: kBloodRed,
+        tooltip: 'Notificaciones',
+        onPressed: () => context.push('/notifications'),
+        child: const Icon(Icons.notifications_outlined),
+      ),
     );
   }
 

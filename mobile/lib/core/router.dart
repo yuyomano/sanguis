@@ -11,6 +11,8 @@ import '../features/rewards/screens/rewards_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/test_results/screens/test_results_screen.dart';
 import '../features/blood_tracker/screens/blood_tracker_screen.dart';
+import '../features/notifications/screens/notifications_screen.dart';
+import '../features/settings/screens/settings_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
 import 'auth_notifier.dart';
 
@@ -43,6 +45,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(path: '/test-results', builder: (_, __) => const TestResultsScreen()),
           GoRoute(path: '/tracker', builder: (_, __) => const BloodTrackerScreen()),
+          GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+          GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
         ],
       ),
     ],

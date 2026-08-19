@@ -32,6 +32,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true)
   const [broadcasting, setBroadcasting] = useState(false)
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null)
+  const [confirmBroadcast, setConfirmBroadcast] = useState(false)
 
   const token = () => localStorage.getItem('sanguis_token')
 
@@ -45,8 +46,8 @@ export default function EventDetailPage() {
   }, [id])
 
   async function broadcast() {
-    if (!confirm('¿Enviar notificación WhatsApp/Email a todos los donantes registrados?')) return
     setBroadcasting(true)
+    setConfirmBroadcast(false)
     setBroadcastResult(null)
     try {
       const res = await fetch(
@@ -95,13 +96,25 @@ export default function EventDetailPage() {
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_EVENT_STYLES[event.status]}`}>
               {event.status}
             </span>
-            <button
-              onClick={broadcast}
-              disabled={broadcasting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blood-50 hover:bg-blood-100 text-blood-700 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Bell size={14} /> {broadcasting ? 'Enviando…' : 'Notificar'}
-            </button>
+            {confirmBroadcast ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">¿Notificar a todos?</span>
+                <button onClick={broadcast} className="px-3 py-1.5 bg-blood-500 text-white rounded-lg text-xs font-semibold hover:bg-blood-600 transition-colors">
+                  Confirmar
+                </button>
+                <button onClick={() => setConfirmBroadcast(false)} className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-xs hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmBroadcast(true)}
+                disabled={broadcasting}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blood-50 hover:bg-blood-100 text-blood-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Bell size={14} /> {broadcasting ? 'Enviando…' : 'Notificar'}
+              </button>
+            )}
           </div>
         </div>
 

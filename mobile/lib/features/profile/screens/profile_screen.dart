@@ -80,6 +80,16 @@ class ProfileScreen extends ConsumerWidget {
           onTap: () => context.go('/tracker'),
         ),
         _MenuItem(
+          icon: Icons.notifications_outlined,
+          label: 'Mis Notificaciones',
+          onTap: () => context.push('/notifications'),
+        ),
+        _MenuItem(
+          icon: Icons.settings_outlined,
+          label: 'Configuración',
+          onTap: () => context.push('/settings'),
+        ),
+        _MenuItem(
           icon: Icons.share_outlined,
           label: 'Referir a un Amigo',
           onTap: referralCode.isNotEmpty
