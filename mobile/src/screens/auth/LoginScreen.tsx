@@ -12,19 +12,19 @@ import { RootStackParamList } from '../../types'
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
 
 export default function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState('')
+  const [idNumber, setIdNumber] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const { login, isLoading } = useAuthStore()
 
   async function handleLogin() {
-    if (!email.trim() || !password) { setError('Completa todos los campos'); return }
+    if (!idNumber.trim() || !password) { setError('Completa todos los campos'); return }
     setError('')
     try {
-      await login(email.trim().toLowerCase(), password)
+      await login(idNumber.trim(), password)
     } catch {
-      setError('Correo o contraseña incorrectos')
+      setError('Cédula o contraseña incorrectos')
     }
   }
 
@@ -45,15 +45,14 @@ export default function LoginScreen({ navigation }: Props) {
           <Text style={styles.cardTitle}>Iniciar sesión</Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Correo electrónico</Text>
+            <Text style={styles.label}>Cédula / Pasaporte</Text>
             <TextInput
               style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              value={idNumber}
+              onChangeText={setIdNumber}
+              keyboardType="default"
               autoCapitalize="none"
-              autoComplete="email"
-              placeholder="tu@correo.com"
+              placeholder="001-1234567-8"
               placeholderTextColor={Colors.textMuted}
             />
           </View>

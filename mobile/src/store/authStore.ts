@@ -7,10 +7,47 @@ interface AuthState {
   donorId: string | null
   isLoading: boolean
   isRestored: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (data: Record<string, string>) => Promise<void>
+  login: (idNumber: string, password: string) => Promise<void>
+  register: (data: Record<string, any>) => Promise<void>
   logout: () => Promise<void>
   restoreSession: () => Promise<void>
+}
+
+function parseSubFromJwt(token: string): string | null {
+  try {
+    const payload = token.split('.')[1]
+    const decoded = JSON.parse(
+      decodeURIComponent(
+        atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      )
+    )
+    return decoded.sub ?? null
+  } catch {
+    return null
+  }
+}
+
+async function secureGet(key: string): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(key)
+  } catch {
+    return null
+  }
+}
+
+async function secureSet(key: string, value: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(key, value)
+  } catch {}
+}
+
+async function secureDel(key: string): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(key)
+  } catch {}
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -20,18 +57,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   isRestored: false,
 
   restoreSession: async () => {
-    const token = await SecureStore.getItemAsync('sanguis_token')
-    const donorId = await SecureStore.getItemAsync('sanguis_donor_id')
+    const token = await secureGet('sanguis_token')
+    const donorId = await secureGet('sanguis_donor_id')
     set({ token, donorId, isRestored: true })
   },
 
-  login: async (email, password) => {
+  login: async (idNumber, password) => {
     set({ isLoading: true })
     try {
-      const { data } = await api.post('/auth/donor/login', { email, password })
-      await SecureStore.setItemAsync('sanguis_token', data.access_token)
-      await SecureStore.setItemAsync('sanguis_donor_id', data.donor.id)
-      set({ token: data.access_token, donorId: data.donor.id })
+      const { data } = await api.post('/auth/donor/login', { idNumber, password })
+      const token = data.accessToken
+      const donorId = parseSubFromJwt(token)
+      await secureSet('sanguis_token', token)
+      if (donorId) await secureSet('sanguis_donor_id', donorId)
+      set({ token, donorId })
     } finally {
       set({ isLoading: false })
     }
@@ -41,17 +80,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     try {
       const { data } = await api.post('/auth/donor/register', formData)
-      await SecureStore.setItemAsync('sanguis_token', data.access_token)
-      await SecureStore.setItemAsync('sanguis_donor_id', data.donor.id)
-      set({ token: data.access_token, donorId: data.donor.id })
+      const token = data.accessToken
+      const donorId = parseSubFromJwt(token)
+      await secureSet('sanguis_token', token)
+      if (donorId) await secureSet('sanguis_donor_id', donorId)
+      set({ token, donorId })
     } finally {
       set({ isLoading: false })
     }
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync('sanguis_token')
-    await SecureStore.deleteItemAsync('sanguis_donor_id')
+    await secureDel('sanguis_token')
+    await secureDel('sanguis_donor_id')
     set({ token: null, donorId: null })
   },
 }))

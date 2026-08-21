@@ -4,19 +4,8 @@
     "slug": "sanguis",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#DC2626"
-    },
-    "assetBundlePatterns": ["**/*"],
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#DC2626"
-      },
       "package": "com.sanguis.sanguis",
       "googleServicesFile": "./android/app/google-services.json",
       "permissions": [
@@ -35,11 +24,6 @@
         }
       ]
     ],
-    "scheme": "sanguis",
-    "extra": {
-      "eas": {
-        "projectId": ""
-      }
-    }
+    "scheme": "sanguis"
   }
 }
