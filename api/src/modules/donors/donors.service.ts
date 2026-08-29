@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { BloodType, DonorCategory, ProductType } from '@prisma/client';
 import { CreateDonorDto } from './dto/create-donor.dto';
 import { UpdateDonorDto } from './dto/update-donor.dto';
@@ -15,7 +16,20 @@ const ELIGIBILITY_DAYS: Record<ProductType, number> = {
 
 @Injectable()
 export class DonorsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
+
+  // Decrypt sensitive fields before returning a donor to callers
+  private decrypt(donor: any): any {
+    if (!donor) return donor;
+    return {
+      ...donor,
+      adminNotes: donor.adminNotes ? this.encryption.decrypt(donor.adminNotes) : donor.adminNotes,
+      fcmToken: donor.fcmToken ? this.encryption.decrypt(donor.fcmToken) : donor.fcmToken,
+    };
+  }
 
   async create(dto: CreateDonorDto) {
     const exists = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
@@ -23,7 +37,7 @@ export class DonorsService {
 
     const passwordHash = await bcrypt.hash(dto.password || dto.idNumber, 12);
 
-    return this.prisma.donor.create({
+    const donor = await this.prisma.donor.create({
       data: {
         name: dto.name,
         idType: dto.idType,
@@ -35,9 +49,10 @@ export class DonorsService {
         passwordHash,
         referredById: dto.referredById || null,
         photoUrl: dto.photoUrl || null,
-        adminNotes: dto.adminNotes || null,
+        adminNotes: dto.adminNotes ? this.encryption.encrypt(dto.adminNotes) : null,
       },
     });
+    return this.decrypt(donor);
   }
 
   async findAll(query: {
@@ -91,12 +106,17 @@ export class DonorsService {
       },
     });
     if (!donor) throw new NotFoundException('Donante no encontrado');
-    return donor;
+    return this.decrypt(donor);
   }
 
   async update(id: string, dto: UpdateDonorDto) {
     await this.findOne(id);
-    return this.prisma.donor.update({ where: { id }, data: dto });
+    const { adminNotes, fcmToken, ...rest } = dto;
+    const data: Record<string, unknown> = { ...rest };
+    if (adminNotes !== undefined) data.adminNotes = adminNotes ? this.encryption.encrypt(adminNotes) : null;
+    if (fcmToken !== undefined) data.fcmToken = fcmToken ? this.encryption.encrypt(fcmToken) : null;
+    const donor = await this.prisma.donor.update({ where: { id }, data });
+    return this.decrypt(donor);
   }
 
   async setCategory(id: string, category: DonorCategory) {

@@ -545,6 +545,21 @@ model TemperatureLog {
   @@map("temperature_logs")
 }
 
+// ─── AUTH: REFRESH TOKEN ROTATION ────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  userId    String
+  userType  String   // 'donor' | 'admin'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
 // ─── EMERGENCY ALERTS ────────────────────────────────────────────────────────
 
 model EmergencyAlert {

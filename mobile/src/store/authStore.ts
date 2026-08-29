@@ -31,23 +31,23 @@ function parseSubFromJwt(token: string): string | null {
 }
 
 async function secureGet(key: string): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(key)
-  } catch {
-    return null
-  }
+  try { return await SecureStore.getItemAsync(key) } catch { return null }
 }
 
 async function secureSet(key: string, value: string): Promise<void> {
-  try {
-    await SecureStore.setItemAsync(key, value)
-  } catch {}
+  try { await SecureStore.setItemAsync(key, value) } catch {}
 }
 
 async function secureDel(key: string): Promise<void> {
-  try {
-    await SecureStore.deleteItemAsync(key)
-  } catch {}
+  try { await SecureStore.deleteItemAsync(key) } catch {}
+}
+
+async function saveTokenPair(accessToken: string, refreshToken: string): Promise<string | null> {
+  const donorId = parseSubFromJwt(accessToken)
+  await secureSet('sanguis_token', accessToken)
+  await secureSet('sanguis_refresh_token', refreshToken)
+  if (donorId) await secureSet('sanguis_donor_id', donorId)
+  return donorId
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -68,11 +68,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const isEmail = identifier.includes('@')
       const body = isEmail ? { email: identifier, password } : { idNumber: identifier, password }
       const { data } = await api.post('/auth/donor/login', body)
-      const token = data.accessToken
-      const donorId = parseSubFromJwt(token)
-      await secureSet('sanguis_token', token)
-      if (donorId) await secureSet('sanguis_donor_id', donorId)
-      set({ token, donorId })
+      const donorId = await saveTokenPair(data.accessToken, data.refreshToken)
+      set({ token: data.accessToken, donorId })
     } finally {
       set({ isLoading: false })
     }
@@ -82,18 +79,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     try {
       const { data } = await api.post('/auth/donor/register', formData)
-      const token = data.accessToken
-      const donorId = parseSubFromJwt(token)
-      await secureSet('sanguis_token', token)
-      if (donorId) await secureSet('sanguis_donor_id', donorId)
-      set({ token, donorId })
+      const donorId = await saveTokenPair(data.accessToken, data.refreshToken)
+      set({ token: data.accessToken, donorId })
     } finally {
       set({ isLoading: false })
     }
   },
 
   logout: async () => {
+    // Revoke the refresh token server-side before clearing local state
+    const refreshToken = await secureGet('sanguis_refresh_token')
+    if (refreshToken) {
+      try { await api.post('/auth/logout', { refreshToken }) } catch {}
+    }
     await secureDel('sanguis_token')
+    await secureDel('sanguis_refresh_token')
     await secureDel('sanguis_donor_id')
     set({ token: null, donorId: null })
   },

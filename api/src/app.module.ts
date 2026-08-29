@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DonorsModule } from './modules/donors/donors.module';
 import { BloodUnitsModule } from './modules/blood-units/blood-units.module';
@@ -17,9 +19,15 @@ import { ReportsModule } from './modules/reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ThrottlerModule.forRoot([
+      // General API: 100 requests per minute
+      { name: 'global', ttl: 60_000, limit: 100 },
+      // Auth endpoints: 10 attempts per 5 minutes (brute-force protection)
+      { name: 'auth', ttl: 300_000, limit: 10 },
+    ]),
     ScheduleModule.forRoot(),
     PrismaModule,
+    CommonModule,
     AuthModule,
     DonorsModule,
     BloodUnitsModule,
@@ -30,6 +38,9 @@ import { ReportsModule } from './modules/reports/reports.module';
     NotificationsModule,
     FinanceModule,
     ReportsModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}
