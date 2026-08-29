@@ -101,7 +101,19 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.referralCode}>{profile.referralCode}</Text>
           <Text style={styles.referralSub}>Comparte y gana puntos cuando tus referidos donen</Text>
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.referralLocked}>
+          <MaterialIcons name="group-add" size={26} color={Colors.textMuted} />
+          <Text style={styles.referralLockedTitle}>Programa de Referidos</Text>
+          <Text style={styles.referralLockedSub}>
+            Completa tu primera donación para desbloquear tu código personal y ganar puntos extra
+          </Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: profile?.lastDonationDate ? '100%' : '0%' }]} />
+          </View>
+          <Text style={styles.progressLabel}>{profile?.lastDonationDate ? 1 : 0} / 1 donación</Text>
+        </View>
+      )}
     </ScrollView>
   )
 }
@@ -145,4 +157,16 @@ const styles = StyleSheet.create({
   referralLabel: { fontSize: 12, color: Colors.textSecondary, marginBottom: 4 },
   referralCode: { fontSize: 28, fontWeight: '800', color: Colors.blood, letterSpacing: 4, marginBottom: 6 },
   referralSub: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
+  referralLocked: {
+    backgroundColor: Colors.white, marginHorizontal: 16, marginBottom: 32,
+    borderRadius: 14, padding: 20, alignItems: 'center', gap: 6,
+    borderWidth: 1.5, borderColor: Colors.border, borderStyle: 'dashed',
+  },
+  referralLockedTitle: { fontSize: 14, fontWeight: '700', color: Colors.text, marginTop: 4 },
+  referralLockedSub: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 17, marginBottom: 8 },
+  progressBar: {
+    width: '100%', height: 5, backgroundColor: Colors.border, borderRadius: 3, overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: Colors.blood, borderRadius: 3 },
+  progressLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
 })

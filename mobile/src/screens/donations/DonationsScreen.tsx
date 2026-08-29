@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl,
+  View, Text, FlatList, StyleSheet, Animated, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { api } from '../../services/api'
@@ -28,6 +28,35 @@ const STATUS_LABELS: Record<string, string> = {
   QUARANTINE: 'Cuarentena',
 }
 
+function SkeletonCard() {
+  const opacity = useRef(new Animated.Value(0.4)).current
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ])
+    ).start()
+  }, [])
+
+  return (
+    <Animated.View style={[styles.card, { opacity }]}>
+      <View style={styles.cardTop}>
+        <View>
+          <View style={styles.skelLine} />
+          <View style={[styles.skelLine, { width: 56, height: 22, marginTop: 6 }]} />
+        </View>
+        <View style={[styles.skelLine, { width: 72, height: 26, borderRadius: 10 }]} />
+      </View>
+      <View style={styles.cardBottom}>
+        <View style={[styles.skelLine, { width: 90 }]} />
+        <View style={[styles.skelLine, { width: 50 }]} />
+      </View>
+    </Animated.View>
+  )
+}
+
 export default function DonationsScreen() {
   const [units, setUnits] = useState<BloodUnit[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,7 +74,17 @@ export default function DonationsScreen() {
   useEffect(() => { load() }, [])
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color={Colors.blood} /></View>
+    return (
+      <View style={styles.root}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Mis Donaciones</Text>
+          <Text style={styles.headerSub}>Cargando…</Text>
+        </View>
+        <View style={styles.list}>
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </View>
+      </View>
+    )
   }
 
   return (
@@ -95,6 +134,7 @@ export default function DonationsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
+  skelLine: { height: 13, backgroundColor: '#E5E7EB', borderRadius: 6, width: 120 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { backgroundColor: Colors.blood, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: Colors.white },

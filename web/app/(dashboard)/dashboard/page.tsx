@@ -158,7 +158,7 @@ export default function DashboardPage() {
           {[
             { label: 'Registrar Donación', href: '/inventory/new', color: 'bg-blood-500 text-white' },
             { label: 'Crear Evento', href: '/events/new', color: 'bg-blue-500 text-white' },
-            { label: 'Alerta de Emergencia', href: '/notifications/emergency', color: 'bg-orange-500 text-white' },
+            { label: 'Alerta de Emergencia', href: '/notifications', color: 'bg-orange-500 text-white' },
             { label: 'Ver Tests Pendientes', href: '/testing', color: 'bg-purple-500 text-white' },
           ].map(({ label, href, color }) => (
             <a

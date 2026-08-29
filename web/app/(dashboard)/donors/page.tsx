@@ -66,16 +66,29 @@ export default function DonorsPage() {
   const [donors, setDonors] = useState<Donor[]>([])
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searching, setSearching] = useState(false)
   const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const LIMIT = 20
 
+  useEffect(() => {
+    if (search === debouncedSearch) return
+    setSearching(true)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+      setSearching(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
   async function fetchDonors() {
     setLoading(true)
     const token = localStorage.getItem('sanguis_token')
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
-    if (search) params.set('search', search)
+    if (debouncedSearch) params.set('search', debouncedSearch)
     if (category) params.set('category', category)
 
     try {
@@ -90,7 +103,7 @@ export default function DonorsPage() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchDonors() }, [page, category])
+  useEffect(() => { fetchDonors() }, [page, category, debouncedSearch])
 
   return (
     <div className="p-8">
@@ -114,10 +127,14 @@ export default function DonorsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchDonors()}
             placeholder="Buscar por nombre, cédula o teléfono..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            className="w-full pl-9 pr-24 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
           />
+          {searching && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blood-500 font-medium animate-pulse">
+              Buscando…
+            </span>
+          )}
         </div>
         <select
           value={category}
