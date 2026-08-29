@@ -26,15 +26,25 @@ export class AuthService {
   }
 
   async registerDonor(dto: RegisterDonorDto) {
-    const exists = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
-    if (exists) throw new ConflictException('Ya existe un donante con ese número de identificación');
+    if (!dto.idNumber && !dto.email) {
+      throw new ConflictException('Proporciona al menos una cédula/pasaporte o un correo electrónico');
+    }
+
+    if (dto.idNumber) {
+      const byId = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+      if (byId) throw new ConflictException('Ya existe un donante con ese número de identificación');
+    }
+    if (dto.email) {
+      const byEmail = await this.prisma.donor.findUnique({ where: { email: dto.email } });
+      if (byEmail) throw new ConflictException('Ya existe un donante con ese correo electrónico');
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const donor = await this.prisma.donor.create({
       data: {
         name: dto.name,
-        idType: dto.idType,
-        idNumber: dto.idNumber,
+        idType: dto.idType ?? null,
+        idNumber: dto.idNumber ?? null,
         phone: dto.phone,
         email: dto.email,
         bloodType: dto.bloodType,
@@ -51,7 +61,14 @@ export class AuthService {
   }
 
   async loginDonor(dto: LoginDonorDto) {
-    const donor = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+    if (!dto.idNumber && !dto.email) {
+      throw new UnauthorizedException('Proporciona tu cédula o correo electrónico');
+    }
+
+    const donor = dto.email
+      ? await this.prisma.donor.findUnique({ where: { email: dto.email } })
+      : await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+
     if (!donor || !donor.isActive) throw new UnauthorizedException('Credenciales inválidas');
 
     const valid = await bcrypt.compare(dto.password, donor.passwordHash);

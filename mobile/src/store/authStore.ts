@@ -7,7 +7,7 @@ interface AuthState {
   donorId: string | null
   isLoading: boolean
   isRestored: boolean
-  login: (idNumber: string, password: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<void>
   register: (data: Record<string, any>) => Promise<void>
   logout: () => Promise<void>
   restoreSession: () => Promise<void>
@@ -62,10 +62,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, donorId, isRestored: true })
   },
 
-  login: async (idNumber, password) => {
+  login: async (identifier, password) => {
     set({ isLoading: true })
     try {
-      const { data } = await api.post('/auth/donor/login', { idNumber, password })
+      const isEmail = identifier.includes('@')
+      const body = isEmail ? { email: identifier, password } : { idNumber: identifier, password }
+      const { data } = await api.post('/auth/donor/login', body)
       const token = data.accessToken
       const donorId = parseSubFromJwt(token)
       await secureSet('sanguis_token', token)

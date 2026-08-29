@@ -158,8 +158,8 @@ model AdminUser {
 model Donor {
   id               String        @id @default(uuid())
   name             String
-  idType           IdType
-  idNumber         String        @unique
+  idType           IdType?
+  idNumber         String?       @unique
   phone            String
   email            String?       @unique
   bloodType        BloodType

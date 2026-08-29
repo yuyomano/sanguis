@@ -40,8 +40,11 @@ export default function RegisterScreen({ navigation }: Props) {
   }
 
   async function handleRegister() {
-    if (!form.name || !form.idNumber || !form.phone || !form.password) {
-      setError('Completa todos los campos obligatorios'); return
+    if (!form.name || !form.phone || !form.password) {
+      setError('Completa los campos obligatorios (nombre, teléfono y contraseña)'); return
+    }
+    if (!form.idNumber && !form.email) {
+      setError('Proporciona al menos tu cédula/pasaporte o correo electrónico'); return
     }
     if (form.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres'); return
@@ -50,8 +53,7 @@ export default function RegisterScreen({ navigation }: Props) {
     try {
       await register({
         name: form.name,
-        idType: 'CEDULA',
-        idNumber: form.idNumber,
+        ...(form.idNumber ? { idType: 'CEDULA', idNumber: form.idNumber } : {}),
         phone: form.phone,
         email: form.email || undefined,
         bloodType: form.bloodType,
@@ -65,9 +67,9 @@ export default function RegisterScreen({ navigation }: Props) {
 
   const textFields: { key: string; label: string; placeholder: string; keyboard?: any; secure?: boolean; required?: boolean }[] = [
     { key: 'name', label: 'Nombre completo *', placeholder: 'Juan Pérez', required: true },
-    { key: 'idNumber', label: 'Cédula / Pasaporte *', placeholder: '001-1234567-8', required: true },
+    { key: 'idNumber', label: 'Cédula / Pasaporte (opcional)', placeholder: '001-1234567-8' },
+    { key: 'email', label: 'Correo electrónico (opcional)', placeholder: 'tu@correo.com', keyboard: 'email-address' },
     { key: 'phone', label: 'Teléfono *', placeholder: '+1 809 000 0000', keyboard: 'phone-pad', required: true },
-    { key: 'email', label: 'Correo (opcional)', placeholder: 'tu@correo.com', keyboard: 'email-address' },
     { key: 'password', label: 'Contraseña *', placeholder: '••••••••', secure: true, required: true },
   ]
 
@@ -80,6 +82,9 @@ export default function RegisterScreen({ navigation }: Props) {
 
         <Text style={styles.title}>Crear cuenta</Text>
         <Text style={styles.sub}>Únete a la comunidad Sanguis</Text>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>Proporciona al menos tu cédula/pasaporte o tu correo electrónico para identificarte.</Text>
+        </View>
 
         {textFields.map(({ key, label, placeholder, keyboard, secure }) => (
           <View key={key} style={styles.field}>
@@ -153,6 +158,8 @@ const styles = StyleSheet.create({
   bloodChipActive: { borderColor: Colors.blood, backgroundColor: Colors.bloodLight },
   bloodChipText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
   bloodChipTextActive: { color: Colors.blood },
+  infoBox: { backgroundColor: '#EFF6FF', borderRadius: 8, padding: 12, marginBottom: 20 },
+  infoText: { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
   error: { color: Colors.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   btn: { backgroundColor: Colors.blood, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
