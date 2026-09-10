@@ -28,6 +28,10 @@ export interface Donor {
   referralCode: string
   lastDonationDate: string | null
   isActive: boolean
+  city: string | null
+  address: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface BloodUnit {

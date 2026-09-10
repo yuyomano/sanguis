@@ -1,6 +1,7 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
+import * as Location from 'expo-location'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useAuthStore } from '../../store/authStore'
 import { useDonorStore } from '../../store/donorStore'
@@ -13,13 +14,37 @@ const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' 
 
 export default function ProfileScreen({ navigation }: Props) {
   const { logout } = useAuthStore()
-  const { profile } = useDonorStore()
+  const { profile, updateLocation } = useDonorStore()
+  const [updatingLocation, setUpdatingLocation] = useState(false)
 
   function handleLogout() {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Salir', style: 'destructive', onPress: logout },
     ])
+  }
+
+  async function handleUpdateLocation() {
+    setUpdatingLocation(true)
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Activa el permiso de ubicación para usar esta función.')
+        return
+      }
+      const pos = await Location.getCurrentPositionAsync({})
+      const [place] = await Location.reverseGeocodeAsync(pos.coords)
+      await updateLocation({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        city: place?.city || place?.subregion || undefined,
+        address: [place?.street, place?.name].filter(Boolean).join(' ') || undefined,
+      })
+    } catch {
+      Alert.alert('Error', 'No se pudo actualizar tu ubicación.')
+    } finally {
+      setUpdatingLocation(false)
+    }
   }
 
   const menuItems = [
@@ -56,12 +81,20 @@ export default function ProfileScreen({ navigation }: Props) {
           { label: 'Teléfono', value: profile?.phone },
           { label: 'Cédula', value: profile?.idNumber },
           { label: 'Puntos', value: profile?.pointsBalance?.toLocaleString() ?? '0' },
+          { label: 'Ciudad', value: profile?.city },
         ].map(({ label, value }) => (
           <View key={label} style={styles.infoRow}>
             <Text style={styles.infoLabel}>{label}</Text>
             <Text style={styles.infoValue}>{value ?? '—'}</Text>
           </View>
         ))}
+        <TouchableOpacity style={styles.locationBtn} onPress={handleUpdateLocation} disabled={updatingLocation}>
+          {updatingLocation
+            ? <ActivityIndicator color={Colors.blood} size="small" />
+            : <Text style={styles.locationBtnText}>
+                {profile?.city ? 'Actualizar mi ubicación' : 'Agregar mi ubicación'}
+              </Text>}
+        </TouchableOpacity>
       </View>
 
       {/* Menu */}
@@ -114,6 +147,8 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
   infoLabel: { fontSize: 14, color: Colors.textSecondary },
   infoValue: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  locationBtn: { paddingVertical: 12, alignItems: 'center' },
+  locationBtnText: { fontSize: 14, fontWeight: '600', color: Colors.blood },
   menu: {
     backgroundColor: Colors.white, marginHorizontal: 16, borderRadius: 16,
     shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 12, elevation: 4, overflow: 'hidden',

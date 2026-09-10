@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, Switch,
 } from 'react-native'
+import * as Location from 'expo-location'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useAuthStore } from '../../store/authStore'
 import { Colors } from '../../theme/colors'
@@ -31,12 +32,37 @@ export default function RegisterScreen({ navigation }: Props) {
     password: '',
     bloodType: 'O_POSITIVE',
     rhFactor: true,
+    city: '',
+    address: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
   })
   const [error, setError] = useState('')
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'done' | 'denied'>('idle')
   const { register, isLoading } = useAuthStore()
 
   function set(key: string, value: any) {
     setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function captureLocation() {
+    setLocationStatus('loading')
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') { setLocationStatus('denied'); return }
+      const pos = await Location.getCurrentPositionAsync({})
+      const [place] = await Location.reverseGeocodeAsync(pos.coords)
+      setForm(f => ({
+        ...f,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        city: place?.city || place?.subregion || f.city,
+        address: [place?.street, place?.name].filter(Boolean).join(' ') || f.address,
+      }))
+      setLocationStatus('done')
+    } catch {
+      setLocationStatus('denied')
+    }
   }
 
   async function handleRegister() {
@@ -59,6 +85,10 @@ export default function RegisterScreen({ navigation }: Props) {
         bloodType: form.bloodType,
         rhFactor: form.rhFactor,
         password: form.password,
+        city: form.city || undefined,
+        address: form.address || undefined,
+        latitude: form.latitude,
+        longitude: form.longitude,
       })
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Error al registrarse')
@@ -123,6 +153,24 @@ export default function RegisterScreen({ navigation }: Props) {
           </ScrollView>
         </View>
 
+        {/* Location */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Ubicación (opcional)</Text>
+          <TouchableOpacity style={styles.locationBtn} onPress={captureLocation} disabled={locationStatus === 'loading'}>
+            {locationStatus === 'loading'
+              ? <ActivityIndicator color={Colors.blood} size="small" />
+              : <Text style={styles.locationBtnText}>
+                  {locationStatus === 'done' ? '📍 Ubicación capturada' : 'Usar mi ubicación actual'}
+                </Text>}
+          </TouchableOpacity>
+          {locationStatus === 'done' && form.city ? (
+            <Text style={styles.locationHint}>{form.city}</Text>
+          ) : null}
+          {locationStatus === 'denied' && (
+            <Text style={styles.locationHint}>No se pudo acceder a tu ubicación. Puedes agregarla luego desde tu perfil.</Text>
+          )}
+        </View>
+
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={isLoading}>
@@ -160,6 +208,12 @@ const styles = StyleSheet.create({
   bloodChipTextActive: { color: Colors.blood },
   infoBox: { backgroundColor: '#EFF6FF', borderRadius: 8, padding: 12, marginBottom: 20 },
   infoText: { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
+  locationBtn: {
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
+    paddingVertical: 12, alignItems: 'center', backgroundColor: Colors.background,
+  },
+  locationBtnText: { fontSize: 14, fontWeight: '600', color: Colors.blood },
+  locationHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   error: { color: Colors.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   btn: { backgroundColor: Colors.blood, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
