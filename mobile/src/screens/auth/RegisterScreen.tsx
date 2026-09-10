@@ -206,8 +206,8 @@ const styles = StyleSheet.create({
   bloodChipActive: { borderColor: Colors.blood, backgroundColor: Colors.bloodLight },
   bloodChipText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
   bloodChipTextActive: { color: Colors.blood },
-  infoBox: { backgroundColor: '#EFF6FF', borderRadius: 8, padding: 12, marginBottom: 20 },
-  infoText: { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
+  infoBox: { backgroundColor: Colors.background, borderRadius: 8, padding: 12, marginBottom: 20 },
+  infoText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
   locationBtn: {
     borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
     paddingVertical: 12, alignItems: 'center', backgroundColor: Colors.background,
