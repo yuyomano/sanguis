@@ -55,6 +55,10 @@ export class AuthService {
         bloodType: dto.bloodType,
         rhFactor: dto.rhFactor,
         passwordHash,
+        city: dto.city ?? null,
+        address: dto.address ?? null,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
         availableTimes: dto.availableTimes,
         referredById: dto.referralCode
           ? (await this.prisma.donor.findFirst({ where: { referralCode: dto.referralCode } }))?.id

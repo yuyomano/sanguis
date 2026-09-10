@@ -4,6 +4,7 @@ import { BloodType, DonorCategory, ProductType } from '@prisma/client';
 import { DonorsService } from './donors.service';
 import { CreateDonorDto } from './dto/create-donor.dto';
 import { UpdateDonorDto } from './dto/update-donor.dto';
+import { UpdateDonorLocationDto } from './dto/update-donor-location.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DonorJwtAuthGuard } from '../../common/guards/donor-jwt-auth.guard';
 
@@ -75,6 +76,14 @@ export class DonorsController {
   @ApiOperation({ summary: 'Actualizar FCM token del donante autenticado (app móvil)' })
   updateFcmToken(@Request() req: any, @Body('fcmToken') fcmToken: string) {
     return this.donorsService.update(req.user.id, { fcmToken });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(DonorJwtAuthGuard)
+  @Patch('me/location')
+  @ApiOperation({ summary: 'Actualizar ciudad/dirección/coordenadas del donante autenticado (app móvil)' })
+  updateMyLocation(@Request() req: any, @Body() dto: UpdateDonorLocationDto) {
+    return this.donorsService.update(req.user.id, dto);
   }
 
   @ApiBearerAuth()

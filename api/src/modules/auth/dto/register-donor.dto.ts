@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, IsObject, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, IsObject, IsNumber, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BloodType, IdType } from '@prisma/client';
 
@@ -48,4 +48,24 @@ export class RegisterDonorDto {
   @IsString()
   @IsOptional()
   referralCode?: string;
+
+  @ApiPropertyOptional({ example: 'Santiago' })
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
 }
