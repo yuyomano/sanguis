@@ -7,19 +7,21 @@ export class RegisterDonorDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ enum: IdType })
+  @ApiPropertyOptional({ enum: IdType, description: 'Requerido si se proporciona idNumber' })
   @IsEnum(IdType)
-  idType: IdType;
+  @IsOptional()
+  idType?: IdType;
 
-  @ApiProperty({ example: '001-1234567-8' })
+  @ApiPropertyOptional({ example: '001-1234567-8', description: 'Cédula o pasaporte — opcional si se proporciona email' })
   @IsString()
-  idNumber: string;
+  @IsOptional()
+  idNumber?: string;
 
   @ApiProperty({ example: '+1-809-555-0000' })
   @IsString()
   phone: string;
 
-  @ApiPropertyOptional({ example: 'juan@email.com' })
+  @ApiPropertyOptional({ example: 'juan@email.com', description: 'Correo — opcional si se proporciona idNumber' })
   @IsEmail()
   @IsOptional()
   email?: string;

@@ -191,4 +191,38 @@ export class RewardsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getBadges() {
+    return this.prisma.badge.findMany({
+      include: { _count: { select: { donorBadges: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createBadge(data: { name: string; description: string; iconUrl?: string; condition?: object }) {
+    return this.prisma.badge.create({
+      data: { ...data, condition: data.condition ?? {} },
+    });
+  }
+
+  async deleteBadge(id: string) {
+    await this.prisma.donorBadge.deleteMany({ where: { badgeId: id } });
+    return this.prisma.badge.delete({ where: { id } });
+  }
+
+  async awardBadge(donorId: string, badgeId: string) {
+    return this.prisma.donorBadge.upsert({
+      where: { donorId_badgeId: { donorId, badgeId } },
+      create: { donorId, badgeId },
+      update: {},
+    });
+  }
+
+  async getDonorBadges(donorId: string) {
+    return this.prisma.donorBadge.findMany({
+      where: { donorId },
+      include: { badge: true },
+      orderBy: { earnedAt: 'desc' },
+    });
+  }
 }

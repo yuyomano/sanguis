@@ -12,16 +12,28 @@ const BLOOD_LABELS: Record<string, string> = {
   AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
 }
 const CATEGORY_STYLES: Record<string, string> = {
-  VIP: 'bg-yellow-100 text-yellow-800',
-  RECURRENT: 'bg-blue-100 text-blue-800',
-  CASUAL: 'bg-gray-100 text-gray-700',
+  VIP: 'bg-plasma/15 text-plasma',
+  RECURRENT: 'bg-blood-50 text-primary',
+  CASUAL: 'bg-muted text-foreground',
+}
+const CATEGORY_LABELS: Record<string, string> = {
+  VIP: 'VIP', RECURRENT: 'Recurrente', CASUAL: 'Casual',
 }
 const STATUS_STYLES: Record<string, string> = {
-  STORED: 'bg-green-100 text-green-800', APPROVED: 'bg-blue-100 text-blue-800',
-  QUARANTINE: 'bg-yellow-100 text-yellow-800', TESTING: 'bg-orange-100 text-orange-800',
-  REJECTED: 'bg-red-100 text-red-800', USED: 'bg-gray-100 text-gray-600',
-  DISCARDED: 'bg-gray-100 text-gray-400', COLLECTED: 'bg-cyan-100 text-cyan-800',
-  ALLOCATED: 'bg-purple-100 text-purple-800',
+  STORED: 'bg-clinical-success/15 text-clinical-success', APPROVED: 'bg-clinical-success/15 text-clinical-success',
+  QUARANTINE: 'bg-plasma/15 text-plasma', TESTING: 'bg-platelet/15 text-platelet',
+  REJECTED: 'bg-alert/15 text-alert', USED: 'bg-muted text-muted-foreground',
+  DISCARDED: 'bg-muted text-muted-foreground/70', COLLECTED: 'bg-muted text-muted-foreground',
+  ALLOCATED: 'bg-blood-50 text-primary',
+}
+const STATUS_LABELS: Record<string, string> = {
+  STORED: 'Almacenada', APPROVED: 'Aprobada', QUARANTINE: 'Cuarentena',
+  ALLOCATED: 'Asignada', REJECTED: 'Rechazada', USED: 'Usada',
+  DISCARDED: 'Descartada', TESTING: 'En análisis', COLLECTED: 'Recolectada',
+}
+const APPT_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: 'Pendiente', CHECKED_IN: 'Presente', CANCELLED: 'Cancelada',
+  NO_SHOW: 'No se presentó', COMPLETED: 'Completada',
 }
 
 export default function DonorProfilePage() {
@@ -70,13 +82,13 @@ export default function DonorProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
       </div>
     )
   }
   if (!donor || donor.message) {
     return (
-      <div className="p-8 text-center text-gray-500">
+      <div className="p-8 text-center text-muted-foreground">
         <p>Donante no encontrado.</p>
       </div>
     )
@@ -87,30 +99,30 @@ export default function DonorProfilePage() {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
-        <ArrowLeft size={16} /> Volver a Donantes
+        <ArrowLeft size={16} /> Volver a donantes
       </button>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-card rounded-md border border-border p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-blood-100 flex items-center justify-center">
-              <User size={28} className="text-blood-600" />
+            <div className="w-16 h-16 rounded-full bg-blood-50 flex items-center justify-center">
+              <User size={28} className="text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900">{donor.name}</h1>
-                {donor.isPriorityDonor && <Crown size={18} className="text-yellow-500" />}
+                <h1 className="font-display text-xl font-semibold text-foreground">{donor.name}</h1>
+                {donor.isPriorityDonor && <Crown size={18} className="text-plasma" />}
               </div>
-              <p className="text-sm text-gray-500">{donor.idType} · {donor.idNumber}</p>
+              <p className="text-sm text-muted-foreground">{donor.idType} · {donor.idNumber}</p>
               <div className="flex items-center gap-2 mt-2">
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blood-500 text-white text-sm font-bold">
+                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-sm font-bold">
                   {BLOOD_LABELS[donor.bloodType]}
                 </span>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${CATEGORY_STYLES[donor.category]}`}>
-                  {donor.category}
+                  {CATEGORY_LABELS[donor.category] || donor.category}
                 </span>
               </div>
             </div>
@@ -120,7 +132,7 @@ export default function DonorProfilePage() {
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => router.push(`/inventory/new?donorId=${id}`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors"
             >
               <Plus size={14} /> Registrar donación
             </button>
@@ -128,7 +140,7 @@ export default function DonorProfilePage() {
               value={donor.category}
               onChange={(e) => setCategory(e.target.value)}
               disabled={saving}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="px-3 py-1.5 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="CASUAL">Casual</option>
               <option value="RECURRENT">Recurrente</option>
@@ -137,10 +149,10 @@ export default function DonorProfilePage() {
             <button
               onClick={togglePriority}
               disabled={saving}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                 donor.isPriorityDonor
-                  ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  ? 'bg-plasma/10 border-plasma/40 text-plasma hover:bg-plasma/15'
+                  : 'border-input text-muted-foreground hover:bg-muted/50'
               }`}
             >
               {donor.isPriorityDonor ? '⭐ Prioritario' : 'Marcar prioritario'}
@@ -149,7 +161,7 @@ export default function DonorProfilePage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
           {[
             { label: 'Total donaciones', value: donor.totalDonations, icon: Droplets },
             { label: 'Puntos Sanguis', value: `${donor.pointsBalance} pts`, icon: Gift },
@@ -157,10 +169,10 @@ export default function DonorProfilePage() {
             { label: 'Email', value: donor.email || '—', icon: Mail },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="flex items-start gap-2">
-              <Icon size={16} className="text-gray-400 mt-0.5 shrink-0" />
+              <Icon size={16} className="text-muted-foreground/70 mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs text-gray-400">{label}</p>
-                <p className="text-sm font-medium text-gray-800 truncate">{value}</p>
+                <p className="text-xs text-muted-foreground/70">{label}</p>
+                <p className="text-sm font-medium text-foreground truncate">{value}</p>
               </div>
             </div>
           ))}
@@ -169,18 +181,18 @@ export default function DonorProfilePage() {
 
       {/* Eligibility */}
       {eligibility && (
-        <div className={`rounded-xl border p-4 mb-6 flex items-center gap-3 ${
-          eligibility.eligible ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+        <div className={`rounded-md border p-4 mb-6 flex items-center gap-3 ${
+          eligibility.eligible ? 'bg-clinical-success/5 border-clinical-success/30' : 'bg-platelet/5 border-platelet/30'
         }`}>
           {eligibility.eligible
-            ? <CheckCircle size={20} className="text-green-600" />
-            : <XCircle size={20} className="text-yellow-600" />}
+            ? <CheckCircle size={20} className="text-clinical-success" />
+            : <XCircle size={20} className="text-platelet" />}
           <div>
-            <p className={`text-sm font-semibold ${eligibility.eligible ? 'text-green-800' : 'text-yellow-800'}`}>
+            <p className={`text-sm font-semibold ${eligibility.eligible ? 'text-clinical-success' : 'text-platelet'}`}>
               {eligibility.eligible ? 'Elegible para donar' : 'No elegible actualmente'}
             </p>
             {!eligibility.eligible && eligibility.nextEligibleDate && (
-              <p className="text-xs text-yellow-700 mt-0.5">
+              <p className="text-xs text-platelet/80 mt-0.5">
                 Puede donar a partir del{' '}
                 {new Date(eligibility.nextEligibleDate).toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' })}
                 {' '}· Han pasado {eligibility.daysSinceLast} de {eligibility.requiredDays} días requeridos
@@ -192,34 +204,34 @@ export default function DonorProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Blood units history */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Droplets size={16} className="text-blood-500" />
+        <div className="bg-card rounded-md border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
+              <Droplets size={16} className="text-primary" />
               Unidades de sangre ({donor._count?.bloodUnits ?? donor.bloodUnits?.length ?? 0})
             </h2>
           </div>
-          <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+          <div className="divide-y divide-border max-h-80 overflow-y-auto">
             {donor.bloodUnits?.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-gray-400">Sin unidades registradas</p>
+              <p className="px-5 py-8 text-center text-sm text-muted-foreground/70">Sin unidades registradas</p>
             ) : donor.bloodUnits?.map((unit: any) => (
               <div key={unit.id} className="px-5 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-mono font-medium text-gray-800">{unit.bagNumber}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-mono font-medium text-foreground">{unit.bagNumber}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5">
                       {unit.productType?.replace(/_/g, ' ')} ·{' '}
                       {unit.collectionDate ? new Date(unit.collectionDate).toLocaleDateString('es-DO') : '—'}
                     </p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin size={11} />
                         {unit.storageLocation?.name || 'Sin ubicación'}
                       </span>
                       {unit.testResults?.length > 0 && (
                         <a
                           href={`/testing/${unit.testResults[0].id}`}
-                          className="text-xs text-blood-600 hover:text-blood-700 flex items-center gap-1 font-medium"
+                          className="text-xs text-primary hover:text-blood-700 flex items-center gap-1 font-medium"
                         >
                           <FlaskConical size={11} />
                           {unit.testResults.length} {unit.testResults.length === 1 ? 'análisis' : 'análisis'} →
@@ -228,7 +240,7 @@ export default function DonorProfilePage() {
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[unit.status] || ''}`}>
-                    {unit.status}
+                    {STATUS_LABELS[unit.status] || unit.status}
                   </span>
                 </div>
               </div>
@@ -237,25 +249,25 @@ export default function DonorProfilePage() {
         </div>
 
         {/* Point transactions */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Gift size={16} className="text-orange-500" />
+        <div className="bg-card rounded-md border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
+              <Gift size={16} className="text-platelet" />
               Historial de puntos
             </h2>
           </div>
-          <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+          <div className="divide-y divide-border max-h-72 overflow-y-auto">
             {donor.pointTransactions?.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-gray-400">Sin transacciones</p>
+              <p className="px-5 py-8 text-center text-sm text-muted-foreground/70">Sin transacciones</p>
             ) : donor.pointTransactions?.map((tx: any) => (
               <div key={tx.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-800">{tx.description}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm text-foreground">{tx.description}</p>
+                  <p className="text-xs text-muted-foreground/70">
                     {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('es-DO') : '—'}
                   </p>
                 </div>
-                <span className={`text-sm font-bold ${tx.points >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                <span className={`text-sm font-bold ${tx.points >= 0 ? 'text-clinical-success' : 'text-alert'}`}>
                   {tx.points >= 0 ? '+' : ''}{tx.points} pts
                 </span>
               </div>
@@ -264,31 +276,31 @@ export default function DonorProfilePage() {
         </div>
 
         {/* Appointments */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden lg:col-span-2">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Calendar size={16} className="text-blue-500" />
+        <div className="bg-card rounded-md border border-border overflow-hidden lg:col-span-2">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
+              <Calendar size={16} className="text-muted-foreground" />
               Citas recientes
             </h2>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {donor.appointments?.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-gray-400">Sin citas registradas</p>
+              <p className="px-5 py-8 text-center text-sm text-muted-foreground/70">Sin citas registradas</p>
             ) : donor.appointments?.map((appt: any) => (
               <div key={appt.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{appt.event?.name || 'Evento'}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm font-medium text-foreground">{appt.event?.name || 'Evento'}</p>
+                  <p className="text-xs text-muted-foreground/70">
                     {appt.scheduledTime ? new Date(appt.scheduledTime).toLocaleString('es-DO') : '—'}
                     {' '}· QR: <span className="font-mono">{appt.qrCode?.slice(0, 8)}…</span>
                   </p>
                 </div>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  appt.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800' :
-                  appt.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                  'bg-blue-100 text-blue-800'
+                  appt.status === 'CHECKED_IN' ? 'bg-clinical-success/15 text-clinical-success' :
+                  appt.status === 'CANCELLED' ? 'bg-alert/15 text-alert' :
+                  'bg-blood-50 text-primary'
                 }`}>
-                  {appt.status}
+                  {APPT_STATUS_LABELS[appt.status] || appt.status}
                 </span>
               </div>
             ))}

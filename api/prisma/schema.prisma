@@ -158,8 +158,8 @@ model AdminUser {
 model Donor {
   id               String        @id @default(uuid())
   name             String
-  idType           IdType
-  idNumber         String        @unique
+  idType           IdType?
+  idNumber         String?       @unique
   phone            String
   email            String?       @unique
   bloodType        BloodType
@@ -543,6 +543,21 @@ model TemperatureLog {
   notes           String?
 
   @@map("temperature_logs")
+}
+
+// ─── AUTH: REFRESH TOKEN ROTATION ────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  userId    String
+  userType  String   // 'donor' | 'admin'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // ─── EMERGENCY ALERTS ────────────────────────────────────────────────────────

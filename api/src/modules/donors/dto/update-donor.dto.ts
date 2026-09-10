@@ -28,6 +28,11 @@ export class UpdateDonorDto {
   fcmToken?: string;
 
   @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  adminNotes?: string;
+
+  @ApiPropertyOptional()
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;

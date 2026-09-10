@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Droplets, AlertTriangle, Calendar, TrendingUp, Activity } from 'lucide-react'
+import { Users, Droplets, AlertTriangle, TrendingUp, Activity } from 'lucide-react'
+import { fmtDOP } from '@/lib/fmt'
 
 const BLOOD_TYPE_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-',
@@ -17,28 +18,26 @@ interface Stats {
   finance: { revenue: number; costs: number }
 }
 
-function StatCard({
-  title, value, subtitle, icon: Icon, color = 'blood',
+function Stat({
+  title, value, subtitle, icon: Icon, tone = 'foreground',
 }: {
   title: string; value: string | number; subtitle?: string
-  icon: React.ComponentType<any>; color?: string
+  icon: React.ComponentType<any>; tone?: 'foreground' | 'primary' | 'alert' | 'success'
 }) {
-  const colors: Record<string, string> = {
-    blood: 'bg-blood-50 text-blood-600',
-    blue: 'bg-blue-50 text-blue-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    green: 'bg-green-50 text-green-600',
+  const toneClass: Record<string, string> = {
+    foreground: 'text-foreground',
+    primary: 'text-primary',
+    alert: 'text-alert',
+    success: 'text-clinical-success',
   }
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-start gap-4">
-      <div className={`p-3 rounded-lg ${colors[color]}`}>
-        <Icon size={22} />
+    <div className="flex-1 min-w-[180px] px-6 py-5 first:pl-0 last:pr-0">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon size={15} className={toneClass[tone]} />
+        <p className="text-sm font-medium">{title}</p>
       </div>
-      <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-0.5">{value}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
-      </div>
+      <p className="font-display text-3xl font-semibold text-foreground mt-2">{value}</p>
+      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
     </div>
   )
 }
@@ -82,7 +81,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary" />
       </div>
     )
   }
@@ -90,75 +89,79 @@ export default function DashboardPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Resumen operacional de Sanguis</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground text-sm mt-1">Resumen operacional de Sanguis</p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Donantes Registrados"
+      {/* KPI strip — una franja, no cuatro cajas idénticas */}
+      <div className="flex flex-wrap divide-x divide-border border border-border rounded-md bg-card mb-6">
+        <Stat
+          title="Donantes registrados"
           value={stats?.donors.total ?? '—'}
           subtitle={`+${stats?.donors.newThisMonth ?? 0} este mes`}
           icon={Users}
-          color="blood"
+          tone="primary"
         />
-        <StatCard
-          title="Unidades en Stock"
+        <Stat
+          title="Unidades en stock"
           value={stats?.inventory.total ?? '—'}
-          subtitle={`${stats?.inventory.expiringSoon ?? 0} vencen en 7 días`}
+          subtitle="Total disponible"
           icon={Droplets}
-          color="blue"
         />
-        <StatCard
-          title="Alerta Vencimiento"
+        <Stat
+          title="Vencen en 7 días"
           value={stats?.inventory.expiringSoon ?? '—'}
-          subtitle="Próximas 24h"
+          subtitle="Requiere acción"
           icon={AlertTriangle}
-          color="yellow"
+          tone="alert"
         />
-        <StatCard
-          title="Ingresos del Mes"
-          value={`RD$ ${(stats?.finance.revenue ?? 0).toLocaleString()}`}
-          subtitle={`Costos: RD$ ${(stats?.finance.costs ?? 0).toLocaleString()}`}
+        <Stat
+          title="Ingresos del mes"
+          value={fmtDOP(stats?.finance.revenue ?? 0)}
+          subtitle={`Costos: ${fmtDOP(stats?.finance.costs ?? 0)}`}
           icon={TrendingUp}
-          color="green"
+          tone="success"
         />
       </div>
 
       {/* Blood type inventory grid */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Activity size={18} className="text-blood-500" />
-          Inventario por Tipo de Sangre
+      <div className="border border-border rounded-md bg-card p-6 mb-6">
+        <h2 className="font-medium text-foreground mb-4 flex items-center gap-2">
+          <Activity size={16} className="text-primary" />
+          Inventario por tipo de sangre
         </h2>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((type) => (
-            <div
-              key={type}
-              className="text-center p-3 rounded-lg border border-gray-200 hover:border-blood-300 transition-colors"
-            >
-              <p className="text-lg font-bold text-blood-600">{type}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.inventory.byBloodType?.[type] ?? '—'}</p>
-            </div>
-          ))}
+          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((type) => {
+            const count = stats?.inventory.byBloodType?.[type] ?? 0
+            return (
+              <div
+                key={type}
+                className="text-center p-3 rounded-md border border-border hover:border-primary/40 transition-colors"
+              >
+                <p className="font-mono text-base font-medium text-primary">{type}</p>
+                <p className={`text-xs mt-1 font-medium ${count === 0 ? 'text-alert' : 'text-muted-foreground'}`}>
+                  {count}
+                </p>
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
+      {/* Quick actions — colores semánticos, no decorativos */}
+      <div className="border border-border rounded-md bg-card p-6">
+        <h2 className="font-medium text-foreground mb-4">Acciones rápidas</h2>
         <div className="flex flex-wrap gap-3">
           {[
-            { label: 'Registrar Donación', href: '/inventory/new', color: 'bg-blood-500 text-white' },
-            { label: 'Crear Evento', href: '/events/new', color: 'bg-blue-500 text-white' },
-            { label: 'Alerta de Emergencia', href: '/notifications/emergency', color: 'bg-orange-500 text-white' },
-            { label: 'Ver Tests Pendientes', href: '/testing', color: 'bg-purple-500 text-white' },
-          ].map(({ label, href, color }) => (
+            { label: 'Registrar donación', href: '/inventory/new', className: 'bg-primary text-primary-foreground hover:bg-blood-600' },
+            { label: 'Crear evento', href: '/events/new', className: 'border border-border text-foreground hover:bg-muted' },
+            { label: 'Alerta de emergencia', href: '/notifications', className: 'bg-alert text-white hover:bg-alert/90' },
+            { label: 'Ver tests pendientes', href: '/testing', className: 'border border-border text-foreground hover:bg-muted' },
+          ].map(({ label, href, className }) => (
             <a
               key={href}
               href={href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 ${color}`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors active:scale-[0.98] ${className}`}
             >
               {label}
             </a>

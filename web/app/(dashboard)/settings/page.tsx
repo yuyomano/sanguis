@@ -76,25 +76,25 @@ export default function SettingsPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-gray-500 text-sm mt-1">Estado del sistema e integraciones</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Configuración</h1>
+        <p className="text-muted-foreground text-sm mt-1">Estado del sistema e integraciones</p>
       </div>
 
       {/* Summary banner */}
       {!loading && status && (
-        <div className={`rounded-xl px-6 py-4 mb-8 flex items-center gap-4 ${
+        <div className={`rounded-md px-6 py-4 mb-8 flex items-center gap-4 ${
           activeCount === INTEGRATIONS.length
-            ? 'bg-green-50 border border-green-200'
+            ? 'bg-clinical-success/5 border border-clinical-success/30'
             : activeCount === 0
-            ? 'bg-red-50 border border-red-200'
-            : 'bg-amber-50 border border-amber-200'
+            ? 'bg-alert/5 border border-alert/30'
+            : 'bg-platelet/5 border border-platelet/30'
         }`}>
-          <Server size={22} className={activeCount === INTEGRATIONS.length ? 'text-green-600' : activeCount === 0 ? 'text-red-500' : 'text-amber-500'} />
+          <Server size={22} className={activeCount === INTEGRATIONS.length ? 'text-clinical-success' : activeCount === 0 ? 'text-alert' : 'text-platelet'} />
           <div>
-            <p className="font-semibold text-sm text-gray-800">
+            <p className="font-semibold text-sm text-foreground">
               {activeCount} de {INTEGRATIONS.length} integraciones activas
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Entorno: <span className="font-mono font-semibold">{status.environment}</span>
             </p>
           </div>
@@ -103,24 +103,24 @@ export default function SettingsPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <XCircle size={32} className="text-red-400 mx-auto mb-3" />
-          <p className="text-red-700 font-medium">No se pudo obtener el estado del sistema</p>
-          <p className="text-sm text-red-400 mt-1">Verifica que el API esté corriendo y que tu sesión esté activa.</p>
+        <div className="bg-alert/5 border border-alert/30 rounded-md p-8 text-center">
+          <XCircle size={32} className="text-alert/70 mx-auto mb-3" />
+          <p className="text-alert font-medium">No se pudo obtener el estado del sistema</p>
+          <p className="text-sm text-alert/70 mt-1">Verifica que el API esté corriendo y que tu sesión esté activa.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {INTEGRATIONS.map(({ key, label, Icon, color, envVars, description, docsUrl }) => {
             const active = status?.[key] ?? false
             return (
-              <div key={key} className={`bg-white rounded-xl border p-6 transition-all ${active ? 'border-gray-200' : 'border-dashed border-gray-300'}`}>
+              <div key={key} className={`bg-card rounded-md border p-6 transition-all ${active ? 'border-border' : 'border-dashed border-input'}`}>
                 <div className="flex items-start gap-4">
                   {/* Icon */}
                   <div
-                    className="p-2.5 rounded-xl flex-shrink-0"
+                    className="p-2.5 rounded-md flex-shrink-0"
                     style={{ backgroundColor: `${color}18` }}
                   >
                     <Icon size={20} style={{ color }} />
@@ -129,11 +129,11 @@ export default function SettingsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-gray-900">{label}</h3>
+                      <h3 className="font-semibold text-foreground">{label}</h3>
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
                         active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          ? 'bg-clinical-success/15 text-clinical-success'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {active
                           ? <><CheckCircle2 size={11} /> Activo</>
@@ -141,21 +141,21 @@ export default function SettingsPage() {
                         }
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mb-3">{description}</p>
+                    <p className="text-sm text-muted-foreground mb-3">{description}</p>
 
                     {!active && (
-                      <div className="bg-gray-50 rounded-lg px-4 py-3">
-                        <p className="text-xs font-semibold text-gray-600 mb-1.5">
+                      <div className="bg-muted/50 rounded-md px-4 py-3">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">
                           Variables de entorno requeridas:
                         </p>
                         <div className="space-y-1">
                           {envVars.map((v) => (
-                            <code key={v} className="block text-xs font-mono text-gray-700 bg-white border border-gray-200 px-2 py-1 rounded">
-                              {v}=<span className="text-gray-400">tu_valor_aquí</span>
+                            <code key={v} className="block text-xs font-mono text-foreground bg-card border border-border px-2 py-1 rounded">
+                              {v}=<span className="text-muted-foreground/70">tu_valor_aquí</span>
                             </code>
                           ))}
                         </div>
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-xs text-muted-foreground/70 mt-2">
                           Agrega estas variables en el archivo <code className="font-mono">.env</code> del API y reinicia el servidor.
                         </p>
                       </div>
@@ -165,8 +165,8 @@ export default function SettingsPage() {
                   {/* Status icon */}
                   <div className="flex-shrink-0">
                     {active
-                      ? <CheckCircle2 size={22} className="text-green-500" />
-                      : <XCircle size={22} className="text-gray-300" />
+                      ? <CheckCircle2 size={22} className="text-clinical-success" />
+                      : <XCircle size={22} className="text-muted-foreground/40" />
                     }
                   </div>
                 </div>
@@ -177,9 +177,9 @@ export default function SettingsPage() {
                       href={docsUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-blood-600 hover:text-blood-700 hover:underline"
+                      className="text-xs text-primary hover:text-blood-700 hover:underline"
                     >
-                      Ver documentación →
+                      Ver documentación
                     </a>
                   </div>
                 )}

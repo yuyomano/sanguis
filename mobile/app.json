@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Sanguis",
+    "slug": "sanguis",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.sanguis.sanguis",
+      "googleServicesFile": "./android/app/google-services.json",
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#DC2626",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "scheme": "sanguis"
+  }
+}

@@ -4,30 +4,41 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Ledger clínico — blanco frío, no cream; rojo venoso, no rojo de marca genérico */
+    --background: 210 13% 97%;
+    --foreground: 220 14% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 14% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 0 65% 46%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 0 65% 46%;
+    --popover-foreground: 220 14% 12%;
+    --primary: 350 60% 35%;
+    --primary-foreground: 210 13% 97%;
+    --secondary: 210 13% 94%;
+    --secondary-foreground: 220 14% 12%;
+    --muted: 210 13% 94%;
+    --muted-foreground: 220 10% 40%;
+    --accent: 210 13% 94%;
+    --accent-foreground: 220 14% 12%;
+    --destructive: 352 65% 46%;
+    --destructive-foreground: 210 13% 97%;
+    --border: 214 15% 88%;
+    --input: 214 15% 88%;
+    --ring: 350 60% 35%;
     --radius: 0.5rem;
   }
 }
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  body { @apply bg-background text-foreground font-sans; }
+  h1, h2, h3, h4 { @apply font-display; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

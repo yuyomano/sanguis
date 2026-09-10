@@ -108,10 +108,10 @@ export default function TestResultsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" /></div>
+    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" /></div>
   }
   if (!test || test.message) {
-    return <div className="p-8 text-center text-gray-500">Test no encontrado.</div>
+    return <div className="p-8 text-center text-muted-foreground">Test no encontrado.</div>
   }
 
   const isViable = test.isViable
@@ -119,45 +119,45 @@ export default function TestResultsPage() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
         <ArrowLeft size={16} /> Volver a Laboratorio
       </button>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Ingresar Resultados de Test</h1>
-        <p className="text-gray-500 text-sm mt-1">Análisis de viabilidad sanguínea</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Ingresar resultados de test</h1>
+        <p className="text-muted-foreground text-sm mt-1">Análisis de viabilidad sanguínea</p>
       </div>
 
       {/* Test info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+      <div className="bg-card rounded-md border border-border p-5 mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Bolsa</p>
-            <p className="font-mono font-medium text-gray-800">{test.bloodUnit?.bagNumber}</p>
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Bolsa</p>
+            <p className="font-mono font-medium text-foreground">{test.bloodUnit?.bagNumber}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Tipo de sangre</p>
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blood-500 text-white text-sm font-bold">
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Tipo de sangre</p>
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-sm font-bold">
               {BLOOD_LABELS[test.bloodUnit?.bloodType] || '?'}
             </span>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Producto</p>
-            <p className="font-medium text-gray-800">{test.bloodUnit?.productType?.replace('_', ' ')}</p>
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Producto</p>
+            <p className="font-medium text-foreground">{test.bloodUnit?.productType?.replace('_', ' ')}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Donante</p>
-            <p className="font-medium text-gray-800">{test.bloodUnit?.donor?.name}</p>
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Donante</p>
+            <p className="font-medium text-foreground">{test.bloodUnit?.donor?.name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Laboratorio</p>
-            <p className="font-medium text-gray-800">
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Laboratorio</p>
+            <p className="font-medium text-foreground">
               {test.labType === 'EXTERNAL' ? test.externalLab?.name || 'Externo' : 'Laboratorio propio'}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">Fecha test</p>
-            <p className="font-medium text-gray-800">
+            <p className="text-xs text-muted-foreground/70 mb-0.5">Fecha test</p>
+            <p className="font-medium text-foreground">
               {test.testDate ? new Date(test.testDate).toLocaleDateString('es-DO') : '—'}
             </p>
           </div>
@@ -166,18 +166,18 @@ export default function TestResultsPage() {
 
       {/* Result banner if already submitted */}
       {hasResult && (
-        <div className={`rounded-xl border p-4 mb-6 flex items-center justify-between ${
-          isViable ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+        <div className={`rounded-md border p-4 mb-6 flex items-center justify-between ${
+          isViable ? 'bg-clinical-success/5 border-clinical-success/30' : 'bg-alert/5 border-alert/30'
         }`}>
           <div className="flex items-center gap-3">
             {isViable
-              ? <CheckCircle size={22} className="text-green-600" />
-              : <XCircle size={22} className="text-red-600" />}
+              ? <CheckCircle size={22} className="text-clinical-success" />
+              : <XCircle size={22} className="text-alert" />}
             <div>
-              <p className={`font-semibold ${isViable ? 'text-green-800' : 'text-red-800'}`}>
-                {isViable ? 'Sangre VIABLE — Pasa a Cuarentena' : 'Sangre RECHAZADA'}
+              <p className={`font-semibold ${isViable ? 'text-clinical-success' : 'text-alert'}`}>
+                {isViable ? 'Sangre viable, pasa a cuarentena' : 'Sangre rechazada'}
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Resultado registrado el {new Date(test.resultDate || Date.now()).toLocaleDateString('es-DO')}
               </p>
             </div>
@@ -186,13 +186,13 @@ export default function TestResultsPage() {
             <button
               onClick={shareWithDonor}
               disabled={sharing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-clinical-success hover:bg-clinical-success/90 text-white rounded-md text-sm font-medium transition-colors"
             >
               <Share2 size={14} /> {sharing ? 'Compartiendo…' : 'Compartir con donante'}
             </button>
           )}
           {test.sharedWithDonor && (
-            <span className="text-xs text-green-700 flex items-center gap-1">
+            <span className="text-xs text-clinical-success flex items-center gap-1">
               <CheckCircle size={13} /> Compartido con donante
             </span>
           )}
@@ -200,16 +200,16 @@ export default function TestResultsPage() {
       )}
 
       {/* Results form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-5 flex items-center gap-2">
-          <FlaskConical size={18} className="text-purple-500" />
+      <div className="bg-card rounded-md border border-border p-6">
+        <h2 className="font-semibold text-foreground mb-5 flex items-center gap-2">
+          <FlaskConical size={18} className="text-primary" />
           Marcadores serológicos
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {SEROLOGICAL_MARKERS.map(({ key, label }) => (
             <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
               <div className="flex gap-2">
                 {['negative', 'positive'].map((val) => (
                   <button
@@ -217,12 +217,12 @@ export default function TestResultsPage() {
                     type="button"
                     disabled={hasResult}
                     onClick={() => setMarkers(m => ({ ...m, [key]: val }))}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`flex-1 py-2 rounded-md text-sm font-medium border transition-colors ${
                       markers[key] === val
                         ? val === 'negative'
-                          ? 'bg-green-500 border-green-500 text-white'
-                          : 'bg-red-500 border-red-500 text-white'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                          ? 'bg-clinical-success border-clinical-success text-white'
+                          : 'bg-alert border-alert text-white'
+                        : 'border-input text-muted-foreground hover:border-primary/40'
                     } disabled:cursor-not-allowed`}
                   >
                     {val === 'negative' ? '✓ Negativo' : '✗ Positivo'}
@@ -233,11 +233,11 @@ export default function TestResultsPage() {
           ))}
         </div>
 
-        <h2 className="font-semibold text-gray-900 mb-4">Parámetros hematológicos</h2>
+        <h2 className="font-semibold text-foreground mb-4">Parámetros hematológicos</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {NUMERIC_MARKERS.map(({ key, label, placeholder, min, max, step }) => (
             <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
               <input
                 type="number"
                 min={min}
@@ -247,14 +247,14 @@ export default function TestResultsPage() {
                 value={numerics[key]}
                 onChange={(e) => setNumerics(n => ({ ...n, [key]: e.target.value }))}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500 disabled:bg-gray-50 disabled:text-gray-500"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary disabled:bg-muted/50 disabled:text-muted-foreground"
               />
             </div>
           ))}
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
+          <div className="mb-4 bg-alert/5 border border-alert/30 text-alert text-sm px-4 py-3 rounded-md">{error}</div>
         )}
 
         {!hasResult && (
@@ -265,14 +265,14 @@ export default function TestResultsPage() {
                 setMarkers(Object.fromEntries(SEROLOGICAL_MARKERS.map(m => [m.key, 'negative'])))
                 setNumerics({ Hemoglobin: '14.2', Hematocrit: '42', Platelets: '250' })
               }}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-4 py-2.5 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
               Auto-rellenar normales
             </button>
             <button
               onClick={submitResults}
               disabled={submitting}
-              className="flex-1 px-4 py-2.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+              className="flex-1 px-4 py-2.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60"
             >
               {submitting ? 'Guardando…' : 'Guardar resultados y determinar viabilidad'}
             </button>

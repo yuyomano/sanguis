@@ -124,47 +124,47 @@ export default function NewBloodUnitPage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-        <ArrowLeft size={16} /> Volver a Inventario
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+        <ArrowLeft size={16} /> Volver a inventario
       </button>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Registrar Donación</h1>
-        <p className="text-gray-500 text-sm mt-1">Nueva unidad de sangre recolectada</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Registrar donación</h1>
+        <p className="text-muted-foreground text-sm mt-1">Nueva unidad de sangre recolectada</p>
       </div>
 
-      <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <form onSubmit={submit} className="bg-card rounded-md border border-border p-6 space-y-5">
         {/* Donor search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Donante *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Donante *</label>
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70" />
             <input
               value={donorSearch}
               onChange={(e) => { setDonorSearch(e.target.value); if (!e.target.value) setSelectedDonor(null) }}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchDonors())}
               placeholder="Buscar por nombre, cédula o teléfono (Enter para buscar)"
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full pl-9 pr-4 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
-          {searching && <p className="text-xs text-gray-400 mt-1">Buscando...</p>}
+          {searching && <p className="text-xs text-muted-foreground/70 mt-1">Buscando...</p>}
           {donors.length > 0 && (
-            <div className="mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="mt-1 border border-border rounded-md overflow-hidden shadow-sm">
               {donors.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => selectDonor(d)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between text-sm border-b border-gray-100 last:border-0"
+                  className="w-full text-left px-4 py-2.5 hover:bg-muted/50 flex items-center justify-between text-sm border-b border-border last:border-0"
                 >
-                  <span className="font-medium text-gray-800">{d.name}</span>
-                  <span className="text-xs text-gray-500">{d.idNumber} · {BLOOD_LABELS[d.bloodType]}</span>
+                  <span className="font-medium text-foreground">{d.name}</span>
+                  <span className="text-xs text-muted-foreground">{d.idNumber} · {BLOOD_LABELS[d.bloodType]}</span>
                 </button>
               ))}
             </div>
           )}
           {selectedDonor && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg">
+            <div className="mt-2 flex items-center gap-2 text-sm text-clinical-success bg-clinical-success/10 px-3 py-2 rounded-md">
               ✓ {selectedDonor.name} · {BLOOD_LABELS[selectedDonor.bloodType]} · {selectedDonor.category}
             </div>
           )}
@@ -172,24 +172,24 @@ export default function NewBloodUnitPage() {
 
         {/* Bag number */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Número de bolsa *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Número de bolsa *</label>
           <input
             required
             value={form.bagNumber}
             onChange={(e) => set('bagNumber', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           />
         </div>
 
         {/* Blood type + Rh */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de sangre *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Tipo de sangre *</label>
             <select
               required
               value={form.bloodType}
               onChange={(e) => set('bloodType', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Seleccionar</option>
               {Object.entries(BLOOD_LABELS).map(([k, v]) => (
@@ -198,11 +198,11 @@ export default function NewBloodUnitPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Factor Rh *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Factor Rh *</label>
             <select
               value={form.rhFactor}
               onChange={(e) => set('rhFactor', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="true">Positivo (+)</option>
               <option value="false">Negativo (−)</option>
@@ -213,7 +213,7 @@ export default function NewBloodUnitPage() {
         {/* Product type + Volume */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Producto *</label>
             <select
               value={form.productType}
               onChange={(e) => {
@@ -221,7 +221,7 @@ export default function NewBloodUnitPage() {
                 set('productType', e.target.value)
                 set('volumeMl', defaults[e.target.value] || '450')
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="WHOLE_BLOOD">Sangre Entera</option>
               <option value="PLATELETS">Plaquetas</option>
@@ -229,38 +229,38 @@ export default function NewBloodUnitPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Volumen (mL) *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Volumen (mL) *</label>
             <input
               required
               type="number"
               min="100"
               value={form.volumeMl}
               onChange={(e) => set('volumeMl', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
 
         {/* Collection date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de recolección *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Fecha de recolección *</label>
           <input
             required
             type="date"
             value={form.collectionDate}
             onChange={(e) => set('collectionDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         {/* Storage */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación de almacenamiento</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Ubicación de almacenamiento</label>
             <select
               value={form.storageLocationId}
               onChange={(e) => set('storageLocationId', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Sin asignar</option>
               {locations.map((loc) => (
@@ -269,27 +269,27 @@ export default function NewBloodUnitPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estante / Posición</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Estante / Posición</label>
             <input
               value={form.storageShelf}
               onChange={(e) => set('storageShelf', e.target.value)}
               placeholder="Ej: A-01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
+          <div className="bg-alert/5 border border-alert/30 text-alert text-sm px-4 py-3 rounded-md">{error}</div>
         )}
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            className="flex-1 px-4 py-2.5 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
             Cancelar
           </button>
           <button type="submit" disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+            className="flex-1 px-4 py-2.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60">
             {loading ? 'Registrando...' : 'Registrar donación'}
           </button>
         </div>
