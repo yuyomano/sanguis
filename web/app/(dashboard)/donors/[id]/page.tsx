@@ -43,6 +43,9 @@ export default function DonorProfilePage() {
   const [eligibility, setEligibility] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [editingLocation, setEditingLocation] = useState(false)
+  const [locationForm, setLocationForm] = useState({ city: '', address: '', latitude: '', longitude: '' })
+  const [savingLocation, setSavingLocation] = useState(false)
 
   const api = process.env.NEXT_PUBLIC_API_URL
   const token = () => localStorage.getItem('sanguis_token')
@@ -52,8 +55,14 @@ export default function DonorProfilePage() {
     Promise.all([
       fetch(`${api}/donors/${id}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
       fetch(`${api}/donors/${id}/eligibility`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
-    ]).then(([d, e]) => { setDonor(d); setEligibility(e) })
-      .finally(() => setLoading(false))
+    ]).then(([d, e]) => {
+      setDonor(d)
+      setEligibility(e)
+      setLocationForm({
+        city: d.city || '', address: d.address || '',
+        latitude: d.latitude?.toString() || '', longitude: d.longitude?.toString() || '',
+      })
+    }).finally(() => setLoading(false))
   }, [id])
 
   async function setCategory(category: string) {
@@ -77,6 +86,22 @@ export default function DonorProfilePage() {
     })
     setDonor((d: any) => ({ ...d, isPriorityDonor: isPriority }))
     setSaving(false)
+  }
+
+  async function saveLocation() {
+    setSavingLocation(true)
+    const body: Record<string, any> = {
+      city: locationForm.city || null,
+      address: locationForm.address || null,
+      latitude: locationForm.latitude ? parseFloat(locationForm.latitude) : null,
+      longitude: locationForm.longitude ? parseFloat(locationForm.longitude) : null,
+    }
+    const res = await fetch(`${api}/donors/${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify(body) })
+    if (res.ok) {
+      setDonor((d: any) => ({ ...d, ...body }))
+      setEditingLocation(false)
+    }
+    setSavingLocation(false)
   }
 
   if (loading) {
@@ -201,6 +226,92 @@ export default function DonorProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Location */}
+      <div className="bg-card rounded-md border border-border p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
+            <MapPin size={16} className="text-muted-foreground" />
+            Ubicación
+          </h2>
+          {!editingLocation && (
+            <button
+              onClick={() => setEditingLocation(true)}
+              className="text-sm text-primary hover:text-blood-700 font-medium"
+            >
+              Editar
+            </button>
+          )}
+        </div>
+
+        {editingLocation ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Ciudad</label>
+                <input
+                  value={locationForm.city}
+                  onChange={(e) => setLocationForm((f) => ({ ...f, city: e.target.value }))}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Dirección</label>
+                <input
+                  value={locationForm.address}
+                  onChange={(e) => setLocationForm((f) => ({ ...f, address: e.target.value }))}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Latitud</label>
+                <input
+                  type="number" step="any"
+                  value={locationForm.latitude}
+                  onChange={(e) => setLocationForm((f) => ({ ...f, latitude: e.target.value }))}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Longitud</label>
+                <input
+                  type="number" step="any"
+                  value={locationForm.longitude}
+                  onChange={(e) => setLocationForm((f) => ({ ...f, longitude: e.target.value }))}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={saveLocation}
+                disabled={savingLocation}
+                className="px-3 py-1.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {savingLocation ? 'Guardando…' : 'Guardar'}
+              </button>
+              <button
+                onClick={() => setEditingLocation(false)}
+                className="px-3 py-1.5 border border-input rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : donor.city || donor.address ? (
+          <div className="text-sm text-foreground space-y-0.5">
+            {donor.city && <p>{donor.city}</p>}
+            {donor.address && <p className="text-muted-foreground">{donor.address}</p>}
+            {donor.latitude != null && donor.longitude != null && (
+              <p className="text-xs text-muted-foreground/70 tabular-nums">{donor.latitude}, {donor.longitude}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground/70">Sin ubicación registrada — útil para priorizar candidatos en solicitudes de emergencia cercanas</p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Blood units history */}
