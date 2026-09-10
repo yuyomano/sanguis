@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   FileBarChart,
+  Siren,
 } from 'lucide-react'
 
 const nav = [
@@ -24,6 +25,7 @@ const nav = [
   { href: '/inventory', label: 'Inventario', icon: Droplets },
   { href: '/testing', label: 'Laboratorio', icon: FlaskConical },
   { href: '/events', label: 'Eventos', icon: CalendarDays },
+  { href: '/emergency', label: 'Emergencias', icon: Siren },
   { href: '/logistics', label: 'Logística', icon: Truck },
   { href: '/rewards', label: 'Socios y Canjes', icon: Gift },
   { href: '/notifications', label: 'Notificaciones', icon: Bell },
