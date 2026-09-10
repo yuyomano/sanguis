@@ -27,7 +27,7 @@ export class ReportsService {
         this.prisma.deliveryOrder.count({
           where: { updatedAt: { gte: from, lte: to }, status: 'DELIVERED' },
         }),
-        this.prisma.emergencyAlert.count({ where: { sentAt: { gte: from, lte: to } } }),
+        this.prisma.emergencyRequest.count({ where: { createdAt: { gte: from, lte: to } } }),
       ]);
 
     const byBloodType: Record<string, number> = {};

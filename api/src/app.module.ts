@@ -15,6 +15,7 @@ import { RewardsModule } from './modules/rewards/rewards.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { EmergencyRequestsModule } from './modules/emergency-requests/emergency-requests.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     NotificationsModule,
     FinanceModule,
     ReportsModule,
+    EmergencyRequestsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

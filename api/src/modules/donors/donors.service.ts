@@ -8,7 +8,7 @@ import { UpdateDonorDto } from './dto/update-donor.dto';
 import dayjs from 'dayjs';
 
 // Minimum days between donations by product type
-const ELIGIBILITY_DAYS: Record<ProductType, number> = {
+export const ELIGIBILITY_DAYS: Record<ProductType, number> = {
   WHOLE_BLOOD: 56,
   PLATELETS: 2,
   PLASMA: 7,

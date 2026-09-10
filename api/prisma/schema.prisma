@@ -138,6 +138,12 @@ enum NotificationStatus {
   DELIVERED
 }
 
+enum EmergencyRequestStatus {
+  OPEN
+  FULFILLED
+  CANCELLED
+}
+
 // ─── AUTH / USERS ─────────────────────────────────────────────────────────────
 
 model AdminUser {
@@ -177,6 +183,10 @@ model Donor {
   adminNotes       String?
   fcmToken         String?
   isActive         Boolean       @default(true)
+  city             String?
+  address          String?
+  latitude         Float?
+  longitude        Float?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -466,20 +476,23 @@ model NotificationTemplate {
 }
 
 model Notification {
-  id          String             @id @default(uuid())
-  donorId     String?
-  donor       Donor?             @relation(fields: [donorId], references: [id])
-  type        NotificationType
-  templateId  String?
-  recipient   String
-  subject     String?
-  body        String
-  status      NotificationStatus @default(PENDING)
-  externalId  String?
-  sentAt      DateTime?
-  deliveredAt DateTime?
-  error       String?
-  createdAt   DateTime           @default(now())
+  id                 String             @id @default(uuid())
+  donorId            String?
+  donor              Donor?             @relation(fields: [donorId], references: [id])
+  type               NotificationType
+  templateId         String?
+  recipient          String
+  subject            String?
+  body               String
+  status             NotificationStatus @default(PENDING)
+  externalId         String?
+  sentAt             DateTime?
+  deliveredAt        DateTime?
+  error              String?
+  createdAt          DateTime           @default(now())
+
+  emergencyRequestId String?
+  emergencyRequest   EmergencyRequest?  @relation(fields: [emergencyRequestId], references: [id])
 
   @@map("notifications")
 }
@@ -562,15 +575,28 @@ model RefreshToken {
 
 // ─── EMERGENCY ALERTS ────────────────────────────────────────────────────────
 
-model EmergencyAlert {
-  id             String    @id @default(uuid())
-  bloodType      BloodType
-  productType    ProductType
-  urgencyLevel   Int       @default(1)
-  message        String
-  sentAt         DateTime  @default(now())
-  resolvedAt     DateTime?
-  targetReachedCount Int   @default(0)
+model EmergencyRequest {
+  id                 String                  @id @default(uuid())
+  hospitalName       String
+  country            String                  @default("República Dominicana")
+  region             String?
+  city               String
+  address            String?
+  latitude           Float?
+  longitude          Float?
+  bloodType          BloodType
+  productType        ProductType
+  unitsNeeded        Int                     @default(1)
+  urgencyLevel       Int                     @default(1)
+  notes              String?
+  requesterName      String?
+  requesterPhone     String?
+  status             EmergencyRequestStatus  @default(OPEN)
+  targetReachedCount Int                     @default(0)
+  createdAt          DateTime                @default(now())
+  resolvedAt         DateTime?
 
-  @@map("emergency_alerts")
+  notifications      Notification[]
+
+  @@map("emergency_requests")
 }
