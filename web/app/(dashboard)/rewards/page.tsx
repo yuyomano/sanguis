@@ -377,7 +377,7 @@ export default function RewardsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Rewards</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Recompensas</h1>
           <p className="text-muted-foreground text-sm mt-1">Socios aliados y canjes de puntos</p>
         </div>
         {tab === 'partners' && (
