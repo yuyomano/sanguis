@@ -19,17 +19,17 @@ const URGENCY_OPTS: { value: UrgencyLevel; label: string; level: number }[] = [
 ]
 
 const URGENCY_STYLES: Record<UrgencyLevel, string> = {
-  NORMAL: 'bg-gray-100 text-gray-700',
-  ALTA: 'bg-yellow-100 text-yellow-700',
-  CRITICA: 'bg-red-100 text-red-700',
+  NORMAL: 'bg-muted text-foreground',
+  ALTA: 'bg-blood-50 text-primary',
+  CRITICA: 'bg-alert/15 text-alert',
 }
 
 const TYPE_LABELS: Record<string, string> = { WHATSAPP: 'WhatsApp', EMAIL: 'Email', PUSH: 'Push' }
 const STATUS_STYLES: Record<string, string> = {
-  DELIVERED: 'bg-green-100 text-green-700',
-  SENT:      'bg-blue-100 text-blue-700',
-  FAILED:    'bg-red-100 text-red-700',
-  PENDING:   'bg-gray-100 text-gray-600',
+  DELIVERED: 'bg-clinical-success/15 text-clinical-success',
+  SENT:      'bg-blood-50 text-primary',
+  FAILED:    'bg-alert/15 text-alert',
+  PENDING:   'bg-muted text-muted-foreground',
 }
 const STATUS_LABELS: Record<string, string> = {
   DELIVERED: 'Entregada', SENT: 'Enviada', FAILED: 'Error', PENDING: 'Pendiente',
@@ -128,16 +128,16 @@ export default function NotificationsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Centro de Notificaciones</h1>
-          <p className="text-gray-500 text-sm mt-1">WhatsApp, Email y Push notifications</p>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Centro de notificaciones</h1>
+          <p className="text-muted-foreground text-sm mt-1">WhatsApp, Email y Push notifications</p>
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-muted rounded-md p-1">
           {(['enviar', 'historial'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
-                tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {t === 'enviar' ? 'Enviar' : 'Historial'}
@@ -149,45 +149,45 @@ export default function NotificationsPage() {
       {tab === 'enviar' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Smart Emergency Alert */}
-          <div className="bg-white rounded-xl border border-red-200 p-6 space-y-4">
+          <div className="bg-card rounded-md border border-alert/30 p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-red-100 rounded-lg">
-                <AlertTriangle size={20} className="text-red-600" />
+              <div className="p-2.5 bg-alert/10 rounded-md">
+                <AlertTriangle size={20} className="text-alert" />
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900">Alerta de Emergencia</h2>
-                <p className="text-sm text-gray-500">Convocatoria inteligente por compatibilidad clínica</p>
+                <h2 className="font-semibold text-foreground">Alerta de emergencia</h2>
+                <p className="text-sm text-muted-foreground">Convocatoria inteligente por compatibilidad clínica</p>
               </div>
             </div>
 
             {/* Selectors row */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Grupo paciente</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Grupo paciente</label>
                 <select
                   value={bloodType}
                   onChange={e => setBloodType(e.target.value as BloodType)}
-                  className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full px-2 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-alert/40"
                 >
                   {BLOOD_TYPES.map(t => <option key={t} value={t}>{BLOOD_LABELS[t]}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Componente</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Componente</label>
                 <select
                   value={component}
                   onChange={e => setComponent(e.target.value as ComponentType)}
-                  className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full px-2 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-alert/40"
                 >
                   {COMPONENTS.map(c => <option key={c} value={c}>{COMPONENT_LABELS[c]}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Urgencia</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Urgencia</label>
                 <select
                   value={urgency}
                   onChange={e => setUrgency(e.target.value as UrgencyLevel)}
-                  className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full px-2 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-alert/40"
                 >
                   {URGENCY_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -195,17 +195,17 @@ export default function NotificationsPage() {
             </div>
 
             {/* Clinical Preview Panel */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Análisis clínico</p>
+            <div className="bg-muted/50 rounded-md p-4 space-y-3 border border-border">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Análisis clínico</p>
 
               <div>
-                <p className="text-xs text-gray-500 mb-1.5">Grupos donantes compatibles (prioridad clínica)</p>
+                <p className="text-xs text-muted-foreground mb-1.5">Grupos donantes compatibles (prioridad clínica)</p>
                 <div className="flex flex-wrap gap-1.5">
                   {compatibleTypes.map((t, i) => (
                     <span
                       key={t}
                       className={`px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums ${
-                        i === 0 ? 'bg-blood-500 text-white' : 'bg-blood-100 text-blood-700'
+                        i === 0 ? 'bg-primary text-white' : 'bg-blood-50 text-primary'
                       }`}
                     >
                       {BLOOD_LABELS[t as BloodType]}
@@ -216,30 +216,30 @@ export default function NotificationsPage() {
 
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Método recomendado</p>
+                  <p className="text-xs text-muted-foreground">Método recomendado</p>
                   <span className={`inline-flex items-center gap-1 text-xs font-semibold mt-0.5 ${
-                    recommendedMethod === 'APHERESIS' ? 'text-purple-700' : 'text-blue-700'
+                    recommendedMethod === 'APHERESIS' ? 'text-plasma' : 'text-primary'
                   }`}>
                     <Zap size={11} />
                     {recommendedMethod === 'APHERESIS' ? 'Aféresis' : 'Sangre Total'}
                   </span>
                 </div>
                 {urgent && (
-                  <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-medium text-alert bg-alert/10 px-2 py-0.5 rounded-full">
                     Difusión prioritaria
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-1.5">
-                <Droplets size={13} className="text-gray-400" />
-                <span className="text-xs text-gray-600">
+                <Droplets size={13} className="text-muted-foreground/70" />
+                <span className="text-xs text-muted-foreground">
                   {previewLoading ? (
-                    <span className="inline-block w-32 h-3 bg-gray-200 rounded animate-pulse" />
+                    <span className="inline-block w-32 h-3 bg-muted rounded animate-pulse" />
                   ) : preview != null ? (
                     <>
-                      <strong className="text-gray-800">{preview.donorCount}</strong> donantes compatibles en la base
-                      {' · '}~<strong className="text-gray-800">{Math.round(preview.donorCount * 0.12)}</strong> respuestas esperadas
+                      <strong className="text-foreground">{preview.donorCount}</strong> donantes compatibles en la base
+                      {' · '}~<strong className="text-foreground">{Math.round(preview.donorCount * 0.12)}</strong> respuestas esperadas
                     </>
                   ) : 'Calculando...'}
                 </span>
@@ -248,22 +248,22 @@ export default function NotificationsPage() {
 
             {/* Message textarea */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje de Emergencia</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Mensaje de Emergencia</label>
               <textarea
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-alert/40 resize-none"
                 placeholder="El mensaje se genera automáticamente..."
               />
-              <p className="text-xs text-gray-400 mt-0.5">Puedes editar el mensaje antes de enviar</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">Puedes editar el mensaje antes de enviar</p>
             </div>
 
             {result && (
-              <div className={`border text-sm px-4 py-3 rounded-lg ${
+              <div className={`border text-sm px-4 py-3 rounded-md ${
                 result.startsWith('Error')
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-green-50 border-green-200 text-green-700'
+                  ? 'bg-alert/5 border-alert/30 text-alert'
+                  : 'bg-clinical-success/5 border-clinical-success/30 text-clinical-success'
               }`}>
                 {result}
               </div>
@@ -272,9 +272,9 @@ export default function NotificationsPage() {
             <button
               onClick={sendEmergency}
               disabled={!message || sending}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60"
+              className="w-full bg-alert hover:bg-alert/90 text-white font-semibold py-2.5 rounded-md transition-colors disabled:opacity-60"
             >
-              {sending ? 'Enviando...' : `Enviar Alerta ${urgency === 'CRITICA' ? 'Crítica' : urgency === 'ALTA' ? 'Urgente' : ''}`}
+              {sending ? 'Enviando…' : `Enviar alerta${urgency === 'CRITICA' ? ' crítica' : urgency === 'ALTA' ? ' urgente' : ''}`}
             </button>
           </div>
 
@@ -285,11 +285,11 @@ export default function NotificationsPage() {
               { icon: Mail, iconCls: 'bg-blue-100 text-blue-600', title: 'Email (SendGrid)', desc: 'Emails de bienvenida, resúmenes mensuales de donación y certificados en PDF.' },
               { icon: Bell, iconCls: 'bg-purple-100 text-purple-600', title: 'Push (Firebase)', desc: 'Notificaciones push en la app móvil para recordatorios y actualizaciones en tiempo real.' },
             ].map(({ icon: Icon, iconCls, title, desc }) => (
-              <div key={title} className="bg-white rounded-xl border border-gray-200 p-5 flex items-start gap-4">
-                <div className={`p-2.5 rounded-lg ${iconCls}`}><Icon size={20} /></div>
+              <div key={title} className="bg-card rounded-md border border-border p-5 flex items-start gap-4">
+                <div className={`p-2.5 rounded-md ${iconCls}`}><Icon size={20} /></div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{title}</p>
-                  <p className="text-sm text-gray-500 mt-1">{desc}</p>
+                  <p className="font-medium text-foreground text-sm">{title}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{desc}</p>
                 </div>
               </div>
             ))}
@@ -297,24 +297,24 @@ export default function NotificationsPage() {
         </div>
       ) : (
         /* ── Historial ──────────────────────────────────────────────── */
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+        <div className="bg-card rounded-md border border-border overflow-x-auto">
           <table className="w-full min-w-[700px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Canal</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Destinatario</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mensaje</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Canal</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destinatario</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mensaje</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estado</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fecha</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {histLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
                     {[40, 90, 180, 60, 70].map((w, j) => (
                       <td key={j} className="px-6 py-4">
-                        <div className="h-3.5 bg-gray-100 rounded animate-pulse" style={{ width: w }} />
+                        <div className="h-3.5 bg-muted rounded animate-pulse" style={{ width: w }} />
                       </td>
                     ))}
                   </tr>
@@ -322,31 +322,31 @@ export default function NotificationsPage() {
               ) : history.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-20 text-center">
-                    <History size={36} className="mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-400 text-sm">Sin notificaciones enviadas</p>
+                    <History size={36} className="mx-auto text-muted-foreground/40 mb-3" />
+                    <p className="text-muted-foreground/70 text-sm">Sin notificaciones enviadas</p>
                   </td>
                 </tr>
               ) : history.map(n => (
-                <tr key={n.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={n.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       {TYPE_LABELS[n.type] || n.type}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-gray-800 font-medium">{n.donor?.name || '—'}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 font-mono">{n.recipient}</p>
+                    <p className="text-sm text-foreground font-medium">{n.donor?.name || '—'}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 font-mono">{n.recipient}</p>
                   </td>
                   <td className="px-6 py-4 max-w-[260px]">
-                    {n.subject && <p className="text-xs font-semibold text-gray-700 mb-0.5">{n.subject}</p>}
-                    <p className="text-xs text-gray-500 truncate">{n.body}</p>
+                    {n.subject && <p className="text-xs font-semibold text-foreground mb-0.5">{n.subject}</p>}
+                    <p className="text-xs text-muted-foreground truncate">{n.body}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[n.status] || 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[n.status] || 'bg-muted text-muted-foreground'}`}>
                       {STATUS_LABELS[n.status] || n.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-500 tabular-nums whitespace-nowrap">
+                  <td className="px-6 py-4 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                     {new Date(n.createdAt).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </td>
                 </tr>
@@ -354,15 +354,15 @@ export default function NotificationsPage() {
             </tbody>
           </table>
           {histTotal > HIST_LIMIT && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">Mostrando {(histPage - 1) * HIST_LIMIT + 1}–{Math.min(histPage * HIST_LIMIT, histTotal)} de {histTotal}</p>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">Mostrando {(histPage - 1) * HIST_LIMIT + 1}–{Math.min(histPage * HIST_LIMIT, histTotal)} de {histTotal}</p>
               <div className="flex gap-2">
                 <button onClick={() => setHistPage(p => Math.max(1, p - 1))} disabled={histPage === 1}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors">
+                  className="px-3 py-1.5 text-sm border border-input rounded-md disabled:opacity-50 hover:bg-muted/50 transition-colors">
                   Anterior
                 </button>
                 <button onClick={() => setHistPage(p => p + 1)} disabled={histPage * HIST_LIMIT >= histTotal}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors">
+                  className="px-3 py-1.5 text-sm border border-input rounded-md disabled:opacity-50 hover:bg-muted/50 transition-colors">
                   Siguiente
                 </button>
               </div>

@@ -66,20 +66,20 @@ export default function NewEventPage() {
     <div className="p-8 max-w-2xl">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
-        <ArrowLeft size={16} /> Volver a Eventos
+        <ArrowLeft size={16} /> Volver a eventos
       </button>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Crear Evento de Donación</h1>
-        <p className="text-gray-500 text-sm mt-1">Configura una nueva jornada de donación</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Crear evento de donación</h1>
+        <p className="text-muted-foreground text-sm mt-1">Configura una nueva jornada de donación</p>
       </div>
 
-      <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <form onSubmit={submit} className="bg-card rounded-md border border-border p-6 space-y-5">
         {/* Type selector */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de evento</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Tipo de evento</label>
           <div className="grid grid-cols-2 gap-3">
             {[
               { value: 'FIXED', label: 'Sede fija', icon: CalendarDays },
@@ -89,10 +89,10 @@ export default function NewEventPage() {
                 key={value}
                 type="button"
                 onClick={() => set('type', value)}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 p-3 rounded-md border-2 text-sm font-medium transition-colors ${
                   form.type === value
-                    ? 'border-blood-500 bg-blood-50 text-blood-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'border-primary bg-blood-50 text-primary'
+                    : 'border-border text-muted-foreground hover:border-input'
                 }`}
               >
                 <Icon size={18} /> {label}
@@ -103,50 +103,50 @@ export default function NewEventPage() {
 
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del evento *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Nombre del evento *</label>
           <input
             required
             value={form.name}
             onChange={(e) => set('name', e.target.value)}
-            placeholder="Ej: Jornada de Donación — Plaza Central"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            placeholder="Ej: Jornada de donación en Plaza Central"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           />
         </div>
 
         {/* Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Dirección *</label>
           <input
             required
             value={form.locationAddress}
             onChange={(e) => set('locationAddress', e.target.value)}
             placeholder="Ej: Av. Independencia 123, Santo Domingo"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           />
         </div>
 
         {/* Coordinates */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Latitud</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Latitud</label>
             <input
               type="number"
               step="any"
               value={form.latitude}
               onChange={(e) => set('latitude', e.target.value)}
               placeholder="18.4746"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Longitud</label>
             <input
               type="number"
               step="any"
               value={form.longitude}
               onChange={(e) => set('longitude', e.target.value)}
               placeholder="-69.9312"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
         </div>
@@ -154,54 +154,54 @@ export default function NewEventPage() {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Inicio *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Inicio *</label>
             <input
               required
               type="datetime-local"
               value={form.startDatetime}
               onChange={(e) => set('startDatetime', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fin *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Fin *</label>
             <input
               required
               type="datetime-local"
               value={form.endDatetime}
               onChange={(e) => set('endDatetime', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
         </div>
 
         {/* Capacity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Capacidad (donantes) *</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Capacidad (donantes) *</label>
           <input
             required
             type="number"
             min="1"
             value={form.capacity}
             onChange={(e) => set('capacity', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Descripción</label>
           <textarea
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             rows={3}
             placeholder="Descripción para los donantes..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none resize-none"
+            className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
           />
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <div className="bg-alert/5 border border-alert/30 text-alert text-sm px-4 py-3 rounded-md">
             {error}
           </div>
         )}
@@ -210,14 +210,14 @@ export default function NewEventPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2.5 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+            className="flex-1 px-4 py-2.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60"
           >
             {loading ? 'Creando...' : 'Crear evento'}
           </button>

@@ -52,8 +52,8 @@ export default function TestingPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Laboratorio — Tests Pendientes</h1>
-        <p className="text-gray-500 text-sm mt-1">{pending.length} tests esperando resultado</p>
+        <h1 className="font-display text-2xl font-semibold text-foreground">Tests pendientes</h1>
+        <p className="text-muted-foreground text-sm mt-1">{pending.length} tests esperando resultado</p>
       </div>
 
       {loading ? (
@@ -61,28 +61,28 @@ export default function TestingPage() {
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
         </div>
       ) : pending.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-muted-foreground/70">
           <FlaskConical size={40} className="mx-auto mb-3 opacity-40" />
           <p>No hay tests pendientes</p>
         </div>
       ) : (
         <div className="space-y-4">
           {pending.map((test) => (
-            <div key={test.id} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5">
-              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                <Clock size={22} className="text-orange-500" />
+            <div key={test.id} className="bg-card rounded-md border border-border p-5 flex items-center gap-5">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                <Clock size={22} className="text-muted-foreground" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <p className="font-semibold text-gray-900">{test.bloodUnit.bagNumber}</p>
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <p className="font-semibold text-foreground">{test.bloodUnit.bagNumber}</p>
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                     {test.bloodUnit.productType.replace('_', ' ')}
                   </span>
-                  <span className="text-xs bg-blood-100 text-blood-600 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-xs bg-blood-50 text-primary px-2 py-0.5 rounded-full font-bold">
                     {test.bloodUnit.bloodType.replace('_POSITIVE', '+').replace('_NEGATIVE', '-')}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Donante: {test.bloodUnit.donor.name} •{' '}
                   {test.labType === 'EXTERNAL' && test.externalLab
                     ? `Lab: ${test.externalLab.name}`
@@ -94,7 +94,7 @@ export default function TestingPage() {
                 <button
                   onClick={() => quickApprove(test.id, true)}
                   disabled={submitting === test.id}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-clinical-success hover:bg-clinical-success/90 text-white text-sm font-medium rounded-md transition disabled:opacity-60"
                 >
                   <CheckCircle size={15} />
                   Viable
@@ -102,14 +102,14 @@ export default function TestingPage() {
                 <button
                   onClick={() => quickApprove(test.id, false)}
                   disabled={submitting === test.id}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-60"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-alert hover:bg-alert/90 text-white text-sm font-medium rounded-md transition disabled:opacity-60"
                 >
                   <XCircle size={15} />
                   Rechazar
                 </button>
                 <a
                   href={`/testing/${test.id}`}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                  className="px-4 py-2 border border-input text-foreground text-sm font-medium rounded-md hover:bg-muted/50 transition"
                 >
                   Ingresar resultados
                 </a>

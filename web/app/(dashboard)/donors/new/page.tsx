@@ -160,43 +160,43 @@ export default function NewDonorPage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-        <ArrowLeft size={16} /> Volver a Donantes
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+        <ArrowLeft size={16} /> Volver a donantes
       </button>
 
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-blood-100 flex items-center justify-center">
-          <User size={20} className="text-blood-600" />
+        <div className="w-10 h-10 rounded-full bg-blood-50 flex items-center justify-center">
+          <User size={20} className="text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nuevo Donante</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Registrar perfil en el sistema</p>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Nuevo donante</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Registrar perfil en el sistema</p>
         </div>
       </div>
 
       <form onSubmit={submit} className="space-y-5">
 
         {/* Foto + Datos personales */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Datos personales</h2>
+        <div className="bg-card rounded-md border border-border p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Datos personales</h2>
 
           {/* Foto */}
           <div className="flex items-start gap-4">
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer overflow-hidden hover:border-blood-400 transition-colors shrink-0"
+              className="w-20 h-20 rounded-full border-2 border-dashed border-input flex items-center justify-center cursor-pointer overflow-hidden hover:border-blood-400 transition-colors shrink-0"
             >
               {photoPreview
                 ? <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
-                : <Upload size={20} className="text-gray-400" />
+                : <Upload size={20} className="text-muted-foreground/70" />
               }
             </div>
             <div className="flex-1 pt-1">
-              <p className="text-sm font-medium text-gray-700">Foto del donante</p>
-              <p className="text-xs text-gray-400 mt-0.5">Opcional · Clic en el círculo para subir</p>
+              <p className="text-sm font-medium text-foreground">Foto del donante</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">Opcional · Clic en el círculo para subir</p>
               {photoPreview && (
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoBase64(null) }}
-                  className="text-xs text-red-500 hover:text-red-700 mt-1 flex items-center gap-1">
+                  className="text-xs text-alert hover:text-alert/80 mt-1 flex items-center gap-1">
                   <X size={12} /> Quitar foto
                 </button>
               )}
@@ -207,23 +207,23 @@ export default function NewDonorPage() {
           {/* Nombres / Apellidos */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Nombres *</label>
               <input
                 required
                 value={form.firstName}
                 onChange={(e) => set('firstName', e.target.value)}
                 placeholder="Ej: María Elena"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Apellidos *</label>
               <input
                 required
                 value={form.lastName}
                 onChange={(e) => set('lastName', e.target.value)}
                 placeholder="Ej: García López"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -231,41 +231,41 @@ export default function NewDonorPage() {
           {/* Documento */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento *</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Tipo de documento *</label>
               <select
                 value={form.idType}
                 onChange={(e) => set('idType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="CEDULA">Cédula</option>
                 <option value="PASSPORT">Pasaporte</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Número de documento *</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Número de documento *</label>
               <input
                 required
                 value={form.idNumber}
                 onChange={(e) => set('idNumber', e.target.value)}
                 placeholder="001-0000000-0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* Contacto */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contacto</h2>
+        <div className="bg-card rounded-md border border-border p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Contacto</h2>
 
           {/* Teléfono internacional */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Teléfono *</label>
             <div className="flex gap-2">
               <select
                 value={form.countryCode}
                 onChange={(e) => set('countryCode', e.target.value)}
-                className="w-44 px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500 shrink-0"
+                className="w-44 px-2 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary shrink-0"
               >
                 {COUNTRY_CODES.map(c => (
                   <option key={c.code} value={c.code}>{c.label}</option>
@@ -276,37 +276,37 @@ export default function NewDonorPage() {
                 value={form.phoneNumber}
                 onChange={(e) => set('phoneNumber', e.target.value)}
                 placeholder="000-000-0000"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+                className="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
             </div>
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Email</label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
               placeholder="correo@ejemplo.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
           </div>
         </div>
 
         {/* Tipo de sangre */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Tipo de sangre *</h2>
+        <div className="bg-card rounded-md border border-border p-6">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">Tipo de sangre *</h2>
           <div className="grid grid-cols-4 gap-2">
             {Object.entries(BLOOD_LABELS).map(([k, v]) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => set('bloodType', k)}
-                className={`py-2.5 rounded-lg text-sm font-semibold border transition-colors ${
+                className={`py-2.5 rounded-md text-sm font-semibold border transition-colors ${
                   form.bloodType === k
-                    ? 'bg-blood-500 border-blood-500 text-white'
-                    : 'border-gray-300 text-gray-700 hover:border-blood-300 hover:bg-blood-50'
+                    ? 'bg-primary border-blood-500 text-white'
+                    : 'border-input text-foreground hover:border-blood-300 hover:bg-blood-50'
                 }`}
               >
                 {v}
@@ -316,39 +316,39 @@ export default function NewDonorPage() {
         </div>
 
         {/* Info adicional */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Información adicional</h2>
+        <div className="bg-card rounded-md border border-border p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Información adicional</h2>
 
           {/* Referido por */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Referido por</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Referido por</label>
             {referredBy ? (
-              <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                <span className="text-sm text-green-800">✓ {referredBy.name} · {referredBy.idNumber}</span>
+              <div className="flex items-center justify-between bg-clinical-success/5 border border-clinical-success/30 rounded-md px-3 py-2">
+                <span className="text-sm text-clinical-success">✓ {referredBy.name} · {referredBy.idNumber}</span>
                 <button type="button" onClick={() => { setReferredBy(null); setRefSearch('') }}
-                  className="text-green-600 hover:text-green-800">
+                  className="text-clinical-success hover:text-clinical-success/80">
                   <X size={14} />
                 </button>
               </div>
             ) : (
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70" />
                 <input
                   value={refSearch}
                   onChange={(e) => { setRefSearch(e.target.value); if (!e.target.value) setRefResults([]) }}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchReferral())}
                   placeholder="Buscar donante que refirió (Enter)"
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+                  className="w-full pl-9 pr-4 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 />
-                {refSearching && <p className="text-xs text-gray-400 mt-1">Buscando...</p>}
+                {refSearching && <p className="text-xs text-muted-foreground/70 mt-1">Buscando...</p>}
                 {refResults.length > 0 && (
-                  <div className="mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <div className="mt-1 border border-border rounded-md overflow-hidden shadow-sm">
                     {refResults.map((d) => (
                       <button key={d.id} type="button"
                         onClick={() => { setReferredBy(d); setRefResults([]) }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between text-sm border-b border-gray-100 last:border-0">
-                        <span className="font-medium text-gray-800">{d.name}</span>
-                        <span className="text-xs text-gray-500">{d.idNumber}</span>
+                        className="w-full text-left px-4 py-2.5 hover:bg-muted/50 flex items-center justify-between text-sm border-b border-border last:border-0">
+                        <span className="font-medium text-foreground">{d.name}</span>
+                        <span className="text-xs text-muted-foreground">{d.idNumber}</span>
                       </button>
                     ))}
                   </div>
@@ -359,39 +359,39 @@ export default function NewDonorPage() {
 
           {/* Comentarios del admin */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Comentarios / Notas internas</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Comentarios / Notas internas</label>
             <textarea
               rows={3}
               value={form.adminNotes}
               onChange={(e) => set('adminNotes', e.target.value)}
               placeholder="Observaciones relevantes para el equipo médico..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none resize-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
             />
           </div>
 
           {/* Contraseña temporal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña temporal (app móvil)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Contraseña temporal (app móvil)</label>
             <input
               value={form.password || form.idNumber}
               onChange={(e) => set('password', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blood-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
-            <p className="text-xs text-gray-400 mt-1">Por defecto es el número de documento.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Por defecto es el número de documento.</p>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
+          <div className="bg-alert/5 border border-alert/30 text-alert text-sm px-4 py-3 rounded-md">{error}</div>
         )}
 
         <div className="flex gap-3">
           <button type="button" onClick={() => router.back()}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            className="flex-1 px-4 py-2.5 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
             Cancelar
           </button>
           <button type="submit" disabled={loading || !form.bloodType}
-            className="flex-1 px-4 py-2.5 bg-blood-500 hover:bg-blood-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+            className="flex-1 px-4 py-2.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60">
             {loading ? 'Registrando...' : 'Crear donante'}
           </button>
         </div>

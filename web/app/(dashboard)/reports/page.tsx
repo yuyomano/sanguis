@@ -59,20 +59,20 @@ function StatCard({ icon: Icon, label, value, sub, color = 'blue' }: {
   icon: React.ComponentType<any>; label: string; value: string | number; sub?: string; color?: string
 }) {
   const colors: Record<string, string> = {
-    blue:   'bg-blue-50 text-blue-600',
-    green:  'bg-green-50 text-green-600',
-    red:    'bg-red-50 text-red-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    blood:  'bg-blood-50 text-blood-600',
-    purple: 'bg-purple-50 text-purple-600',
+    blue:   'bg-blood-50 text-primary',
+    green:  'bg-clinical-success/10 text-clinical-success',
+    red:    'bg-alert/10 text-alert',
+    yellow: 'bg-platelet/10 text-platelet',
+    blood:  'bg-blood-50 text-primary',
+    purple: 'bg-plasma/10 text-plasma',
   }
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-start gap-4">
-      <div className={`p-2.5 rounded-lg ${colors[color]}`}><Icon size={20} /></div>
+    <div className="bg-card rounded-md border border-border p-5 flex items-start gap-4">
+      <div className={`p-2.5 rounded-md ${colors[color]}`}><Icon size={20} /></div>
       <div>
-        <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        <p className="text-xs text-muted-foreground font-medium">{label}</p>
+        <p className="text-2xl font-bold text-foreground mt-0.5">{value}</p>
+        {sub && <p className="text-xs text-muted-foreground/70 mt-0.5">{sub}</p>}
       </div>
     </div>
   )
@@ -138,7 +138,7 @@ export default function ReportsPage() {
 
   function exportCSV(r: Report) {
     const rows: string[][] = [
-      ['Reporte SESPAS — Sanguis'],
+      ['Reporte SESPAS de Sanguis'],
       ['Período', `${r.period.from} a ${r.period.to}`],
       [],
       ['Resumen'],
@@ -176,21 +176,21 @@ export default function ReportsPage() {
       {/* Header + Date filter */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reportes SESPAS</h1>
-          <p className="text-gray-500 text-sm mt-1">Informe regulatorio de banco de sangre — República Dominicana</p>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Reportes SESPAS</h1>
+          <p className="text-muted-foreground text-sm mt-1">Informe regulatorio de banco de sangre para República Dominicana</p>
         </div>
         <div className="flex gap-2 print:hidden">
           {report && (
             <button
               onClick={() => exportCSV(report)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
               <Download size={16} /> Exportar CSV
             </button>
           )}
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-input rounded-md text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
           >
             <Printer size={16} /> Imprimir
           </button>
@@ -198,20 +198,20 @@ export default function ReportsPage() {
       </div>
 
       {/* Period picker */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-end gap-4 print:hidden">
+      <div className="bg-card rounded-md border border-border p-5 flex items-end gap-4 print:hidden">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Desde</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Desde</label>
           <input type="date" value={from} onChange={e => setFrom(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500" />
+            className="px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Hasta</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Hasta</label>
           <input type="date" value={to} onChange={e => setTo(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500" />
+            className="px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <button
           onClick={fetchReport}
-          className="px-4 py-2 bg-blood-500 text-white rounded-lg text-sm font-medium hover:bg-blood-600 transition-colors"
+          className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-blood-600 transition-colors"
         >
           Generar reporte
         </button>
@@ -224,10 +224,10 @@ export default function ReportsPage() {
       ) : report ? (
         <>
           {/* Período del reporte */}
-          <div className="text-xs text-gray-400 flex items-center gap-2 print:block">
+          <div className="text-xs text-muted-foreground/70 flex items-center gap-2 print:block">
             <FileText size={13} />
             Período:{' '}
-            <span className="font-medium text-gray-600">
+            <span className="font-medium text-muted-foreground">
               {new Date(report.period.from).toLocaleDateString('es-DO', { day: '2-digit', month: 'long', year: 'numeric' })}
               {' — '}
               {new Date(report.period.to).toLocaleDateString('es-DO', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -236,30 +236,30 @@ export default function ReportsPage() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard icon={Droplets} label="Unidades Recolectadas" value={s?.totalUnitsCollected ?? 0} color="blood" />
-            <StatCard icon={FlaskConical} label="Tests Realizados"
+            <StatCard icon={Droplets} label="Unidades recolectadas" value={s?.totalUnitsCollected ?? 0} color="blood" />
+            <StatCard icon={FlaskConical} label="Tests realizados"
               value={s?.totalTests ?? 0}
               sub={s?.viabilityRate != null ? `${s.viabilityRate}% viables` : undefined}
               color="green" />
-            <StatCard icon={Users} label="Donantes Nuevos"
+            <StatCard icon={Users} label="Donantes nuevos"
               value={s?.newDonors ?? 0}
               sub={`${s?.totalActiveDonors ?? 0} activos en total`}
               color="blue" />
-            <StatCard icon={Truck} label="Entregas Completadas" value={s?.deliveriesCompleted ?? 0} color="purple" />
+            <StatCard icon={Truck} label="Entregas completadas" value={s?.deliveriesCompleted ?? 0} color="purple" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard icon={FlaskConical} label="Unidades Viables" value={s?.viableTests ?? 0} color="green" />
-            <StatCard icon={FlaskConical} label="Unidades Rechazadas" value={s?.rejectedTests ?? 0} color="red" />
-            <StatCard icon={AlertTriangle} label="Alertas de Emergencia" value={s?.emergencyAlerts ?? 0} color="yellow" />
+            <StatCard icon={FlaskConical} label="Unidades viables" value={s?.viableTests ?? 0} color="green" />
+            <StatCard icon={FlaskConical} label="Unidades rechazadas" value={s?.rejectedTests ?? 0} color="red" />
+            <StatCard icon={AlertTriangle} label="Alertas de emergencia" value={s?.emergencyAlerts ?? 0} color="yellow" />
           </div>
 
           {/* Tablas de desglose */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Por grupo sanguíneo */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-sm text-gray-900">Por Grupo Sanguíneo</h3>
+            <div className="bg-card rounded-md border border-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="font-semibold text-sm text-foreground">Por grupo sanguíneo</h3>
               </div>
               <table className="w-full">
                 <tbody>
@@ -267,17 +267,17 @@ export default function ReportsPage() {
                     const count = report.byBloodType[key] ?? 0
                     const total = s?.totalUnitsCollected || 1
                     return (
-                      <tr key={key} className="border-b border-gray-50 last:border-0">
+                      <tr key={key} className="border-b border-border last:border-0">
                         <td className="px-5 py-2.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blood-100 text-blood-700 text-xs font-bold">{label}</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blood-50 text-blood-700 text-xs font-bold">{label}</span>
                         </td>
-                        <td className="px-5 py-2.5 text-sm text-gray-700 tabular-nums">{count}</td>
+                        <td className="px-5 py-2.5 text-sm text-foreground tabular-nums">{count}</td>
                         <td className="px-5 py-2.5">
-                          <div className="w-full bg-gray-100 rounded-full h-1.5">
-                            <div className="bg-blood-500 h-1.5 rounded-full" style={{ width: `${(count / total) * 100}%` }} />
+                          <div className="w-full bg-muted rounded-full h-1.5">
+                            <div className="bg-primary h-1.5 rounded-full" style={{ width: `${(count / total) * 100}%` }} />
                           </div>
                         </td>
-                        <td className="px-5 py-2.5 text-xs text-gray-400 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
+                        <td className="px-5 py-2.5 text-xs text-muted-foreground/70 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
                       </tr>
                     )
                   })}
@@ -286,9 +286,9 @@ export default function ReportsPage() {
             </div>
 
             {/* Por tipo de producto */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-sm text-gray-900">Por Tipo de Producto</h3>
+            <div className="bg-card rounded-md border border-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="font-semibold text-sm text-foreground">Por tipo de producto</h3>
               </div>
               <table className="w-full">
                 <tbody>
@@ -296,15 +296,15 @@ export default function ReportsPage() {
                     const count = report.byProductType[key] ?? 0
                     const total = s?.totalUnitsCollected || 1
                     return (
-                      <tr key={key} className="border-b border-gray-50 last:border-0">
-                        <td className="px-5 py-2.5 text-sm text-gray-700">{label}</td>
-                        <td className="px-5 py-2.5 text-sm text-gray-700 tabular-nums">{count}</td>
+                      <tr key={key} className="border-b border-border last:border-0">
+                        <td className="px-5 py-2.5 text-sm text-foreground">{label}</td>
+                        <td className="px-5 py-2.5 text-sm text-foreground tabular-nums">{count}</td>
                         <td className="px-5 py-2.5">
-                          <div className="w-full bg-gray-100 rounded-full h-1.5">
-                            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${(count / total) * 100}%` }} />
+                          <div className="w-full bg-muted rounded-full h-1.5">
+                            <div className="bg-primary h-1.5 rounded-full" style={{ width: `${(count / total) * 100}%` }} />
                           </div>
                         </td>
-                        <td className="px-5 py-2.5 text-xs text-gray-400 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
+                        <td className="px-5 py-2.5 text-xs text-muted-foreground/70 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
                       </tr>
                     )
                   })}
@@ -313,9 +313,9 @@ export default function ReportsPage() {
             </div>
 
             {/* Por estado */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-sm text-gray-900">Por Estado</h3>
+            <div className="bg-card rounded-md border border-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="font-semibold text-sm text-foreground">Por estado</h3>
               </div>
               <table className="w-full">
                 <tbody>
@@ -323,10 +323,10 @@ export default function ReportsPage() {
                     const count = report.byStatus[key] ?? 0
                     const total = s?.totalUnitsCollected || 1
                     return count > 0 ? (
-                      <tr key={key} className="border-b border-gray-50 last:border-0">
-                        <td className="px-5 py-2.5 text-sm text-gray-700">{label}</td>
-                        <td className="px-5 py-2.5 text-sm text-gray-700 tabular-nums">{count}</td>
-                        <td className="px-5 py-2.5 text-xs text-gray-400 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
+                      <tr key={key} className="border-b border-border last:border-0">
+                        <td className="px-5 py-2.5 text-sm text-foreground">{label}</td>
+                        <td className="px-5 py-2.5 text-sm text-foreground tabular-nums">{count}</td>
+                        <td className="px-5 py-2.5 text-xs text-muted-foreground/70 tabular-nums">{((count / total) * 100).toFixed(0)}%</td>
                       </tr>
                     ) : null
                   })}
@@ -338,19 +338,19 @@ export default function ReportsPage() {
       ) : null}
 
       {/* ── Cold Chain ─────────────────────────────────────────────────── */}
-      <div className="border-t border-gray-200 pt-8">
+      <div className="border-t border-border pt-8">
         <div className="flex items-center gap-2 mb-5">
-          <Thermometer size={20} className="text-blue-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Cadena de Frío</h2>
+          <Thermometer size={20} className="text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">Cadena de frío</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Log form */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-sm text-gray-800 mb-4">Registrar lectura</h3>
+          <div className="bg-card rounded-md border border-border p-5">
+            <h3 className="font-semibold text-sm text-foreground mb-4">Registrar lectura</h3>
             <form onSubmit={submitTempLog} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Temperatura (°C) *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Temperatura (°C) *</label>
                 <input
                   required
                   type="number"
@@ -358,44 +358,44 @@ export default function ReportsPage() {
                   value={logForm.tempCelsius}
                   onChange={e => setLogForm(f => ({ ...f, tempCelsius: e.target.value }))}
                   placeholder="4.0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Ubicación</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Ubicación</label>
                 <select
                   value={logForm.locationId}
                   onChange={e => setLogForm(f => ({ ...f, locationId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">— Seleccionar —</option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Registrado por</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Registrado por</label>
                 <input
                   type="text"
                   value={logForm.recordedBy}
                   onChange={e => setLogForm(f => ({ ...f, recordedBy: e.target.value }))}
                   placeholder="Nombre del técnico"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Notas</label>
                 <input
                   type="text"
                   value={logForm.notes}
                   onChange={e => setLogForm(f => ({ ...f, notes: e.target.value }))}
                   placeholder="Observaciones opcionales"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blood-500"
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loggingTemp}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 py-2 bg-primary hover:bg-blood-600 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-60"
               >
                 <Plus size={15} /> {loggingTemp ? 'Guardando...' : 'Registrar lectura'}
               </button>
@@ -403,13 +403,13 @@ export default function ReportsPage() {
           </div>
 
           {/* Logs table */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-sm text-gray-800">Últimas lecturas</h3>
+          <div className="lg:col-span-2 bg-card rounded-md border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="font-semibold text-sm text-foreground">Últimas lecturas</h3>
               <select
                 value={selectedLocation}
                 onChange={e => setSelectedLocation(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blood-500"
+                className="px-2 py-1 border border-input rounded-md text-xs outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Todas las ubicaciones</option>
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -418,27 +418,27 @@ export default function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px]">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase">Temp.</th>
-                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase">Fecha</th>
-                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase">Por</th>
-                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase">Notas</th>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Temp.</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Fecha</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Por</th>
+                    <th className="text-left px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Notas</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-border">
                   {tempLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
                         {[40, 80, 60, 100].map((w, j) => (
                           <td key={j} className="px-5 py-3">
-                            <div className="h-3.5 bg-gray-100 rounded animate-pulse" style={{ width: w }} />
+                            <div className="h-3.5 bg-muted rounded animate-pulse" style={{ width: w }} />
                           </td>
                         ))}
                       </tr>
                     ))
                   ) : tempLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-10 text-center text-gray-400 text-sm">
+                      <td colSpan={4} className="py-10 text-center text-muted-foreground/70 text-sm">
                         Sin lecturas de temperatura
                       </td>
                     </tr>
@@ -447,19 +447,19 @@ export default function ReportsPage() {
                     const isOk = temp >= 1 && temp <= 10
                     const isFrozen = temp < 1
                     return (
-                      <tr key={log.id} className={`hover:bg-gray-50 ${isFrozen ? 'bg-blue-50' : !isOk ? 'bg-red-50' : ''}`}>
+                      <tr key={log.id} className={`hover:bg-muted/50 ${isFrozen ? 'bg-platelet/5' : !isOk ? 'bg-alert/5' : ''}`}>
                         <td className="px-5 py-3">
-                          <span className={`font-mono font-semibold text-sm ${isFrozen ? 'text-blue-600' : !isOk ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`font-mono font-semibold text-sm ${isFrozen ? 'text-platelet' : !isOk ? 'text-alert' : 'text-clinical-success'}`}>
                             {temp > 0 ? '+' : ''}{temp.toFixed(1)}°C
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-xs text-gray-500">
+                        <td className="px-5 py-3 text-xs text-muted-foreground">
                           {new Date(log.recordedAt).toLocaleDateString('es-DO', {
                             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                           })}
                         </td>
-                        <td className="px-5 py-3 text-xs text-gray-600">{log.recordedBy || '—'}</td>
-                        <td className="px-5 py-3 text-xs text-gray-500 max-w-[140px] truncate">{log.notes || '—'}</td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground">{log.recordedBy || '—'}</td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground max-w-[140px] truncate">{log.notes || '—'}</td>
                       </tr>
                     )
                   })}
