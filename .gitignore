@@ -8,18 +8,11 @@ dist/
 .env.local
 .env.*.local
 
-# Flutter / Dart
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/build/
-mobile/.pub-cache/
-mobile/.pub/
-mobile/android/local.properties
-mobile/android/.gradle/
-mobile/ios/Pods/
-mobile/ios/.symlinks/
-mobile/*.iml
+# Expo / React Native
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/
 mobile/android/app/google-services.json
 mobile/ios/Runner/GoogleService-Info.plist
 
@@ -36,3 +29,6 @@ desktop.ini
 
 # Prisma
 api/prisma/migrations/*.sql
+
+# Graphify (generated code graph)
+graphify-out/
