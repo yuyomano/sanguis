@@ -59,7 +59,7 @@ export default function FinancePage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
         </div>
       ) : (
         <>

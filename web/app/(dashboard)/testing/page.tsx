@@ -58,7 +58,7 @@ export default function TestingPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
         </div>
       ) : pending.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">

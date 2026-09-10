@@ -67,7 +67,7 @@ export default function EventDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" /></div>
+    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" /></div>
   }
   if (!event || event.message) {
     return <div className="p-8 text-center text-muted-foreground">Evento no encontrado.</div>
@@ -113,7 +113,7 @@ export default function EventDetailPage() {
               <button
                 onClick={() => setConfirmBroadcast(true)}
                 disabled={broadcasting}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blood-50 hover:bg-blood-50 text-primary rounded-md text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blood-50 hover:bg-blood-100 text-primary rounded-md text-sm font-medium transition-colors"
               >
                 <Bell size={14} /> {broadcasting ? 'Enviando…' : 'Notificar'}
               </button>

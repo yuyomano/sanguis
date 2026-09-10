@@ -108,7 +108,7 @@ export default function TestResultsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" /></div>
+    return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" /></div>
   }
   if (!test || test.message) {
     return <div className="p-8 text-center text-muted-foreground">Test no encontrado.</div>

@@ -234,7 +234,7 @@ function PartnerModal({ partner, onClose, onSaved }: PartnerModalProps) {
                 className="w-20 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addReward() } }}
               />
-              <button type="button" onClick={addReward} className="px-3 py-2 bg-muted hover:bg-muted rounded-md transition-colors">
+              <button type="button" onClick={addReward} className="px-3 py-2 bg-muted hover:bg-border rounded-md transition-colors">
                 <Plus size={16} className="text-muted-foreground" />
               </button>
             </div>
@@ -422,7 +422,7 @@ export default function RewardsPage() {
         <>
           {loadingPartners ? (
             <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
             </div>
           ) : partners.length === 0 ? (
             <div className="bg-card rounded-md border border-dashed border-border p-16 flex flex-col items-center text-center">
@@ -466,7 +466,7 @@ export default function RewardsPage() {
         <>
           {loadingRedemptions ? (
             <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blood-500" />
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary" />
             </div>
           ) : redemptions.length === 0 ? (
             <div className="bg-card rounded-md border border-dashed border-border p-16 flex flex-col items-center text-center">

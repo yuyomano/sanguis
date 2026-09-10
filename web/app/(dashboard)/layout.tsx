@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </svg>
           <div>
             <p className="font-display font-semibold text-foreground leading-none">Sanguis</p>
-            <p className="text-xs text-muted-foreground mt-1">Admin Panel</p>
+            <p className="text-xs text-muted-foreground mt-1">Panel de administración</p>
           </div>
         </div>
 

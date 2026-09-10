@@ -176,7 +176,7 @@ export default function EventsPage() {
                 ) : (
                   <button
                     onClick={() => setNotifyingId(event.id)}
-                    className="flex-1 text-sm bg-blood-50 text-primary px-3 py-1.5 rounded-md hover:bg-blood-50 transition-colors"
+                    className="flex-1 text-sm bg-blood-50 text-primary px-3 py-1.5 rounded-md hover:bg-blood-100 transition-colors"
                   >
                     Notificar
                   </button>
