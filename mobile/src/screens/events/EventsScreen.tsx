@@ -11,7 +11,7 @@ import { DonationEvent, RootStackParamList } from '../../types'
 type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
 
 const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#0891B2', ACTIVE: '#059669', COMPLETED: '#6B7280', CANCELLED: '#DC2626',
+  SCHEDULED: Colors.blood, ACTIVE: Colors.success, COMPLETED: Colors.textMuted, CANCELLED: Colors.error,
 }
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Programado', ACTIVE: 'Activo', COMPLETED: 'Completado', CANCELLED: 'Cancelado',
@@ -39,7 +39,7 @@ export default function EventsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Eventos de Donación</Text>
+        <Text style={styles.headerTitle}>Eventos de donación</Text>
       </View>
 
       <FlatList
@@ -67,8 +67,8 @@ export default function EventsScreen({ navigation }: Props) {
                   <Text style={styles.locationText} numberOfLines={1}>{item.locationName}</Text>
                 </View>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? '#6B7280') + '20' }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] ?? '#6B7280' }]}>
+              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? Colors.textMuted) + '20' }]}>
+                <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] ?? Colors.textMuted }]}>
                   {STATUS_LABELS[item.status] ?? item.status}
                 </Text>
               </View>

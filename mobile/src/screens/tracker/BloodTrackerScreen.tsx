@@ -8,10 +8,10 @@ import { Colors } from '../../theme/colors'
 import { BloodUnit, BLOOD_LABELS } from '../../types'
 
 const STATUS_INFO: Record<string, { label: string; color: string; icon: keyof typeof MaterialIcons.glyphMap }> = {
-  AVAILABLE: { label: 'Disponible en banco', color: '#059669', icon: 'local-hospital' },
-  QUARANTINE: { label: 'En cuarentena', color: '#D97706', icon: 'hourglass-empty' },
-  USED: { label: 'Utilizada', color: '#0891B2', icon: 'favorite' },
-  EXPIRED: { label: 'Vencida', color: '#6B7280', icon: 'cancel' },
+  AVAILABLE: { label: 'Disponible en banco', color: Colors.success, icon: 'local-hospital' },
+  QUARANTINE: { label: 'En cuarentena', color: Colors.plasma, icon: 'hourglass-empty' },
+  USED: { label: 'Utilizada', color: Colors.textMuted, icon: 'favorite' },
+  EXPIRED: { label: 'Vencida', color: Colors.error, icon: 'cancel' },
 }
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -75,7 +75,7 @@ export default function BloodTrackerScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const info = STATUS_INFO[item.status] ?? { label: item.status, color: '#6B7280', icon: 'info' as const }
+          const info = STATUS_INFO[item.status] ?? { label: item.status, color: Colors.textMuted, icon: 'info' as const }
           return (
             <View style={styles.card}>
               <View style={[styles.statusBar, { backgroundColor: info.color }]} />

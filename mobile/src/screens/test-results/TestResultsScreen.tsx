@@ -8,10 +8,10 @@ import { Colors } from '../../theme/colors'
 import { TestResult } from '../../types'
 
 const RESULT_COLORS: Record<string, string> = {
-  NEGATIVE: '#059669',
-  POSITIVE: '#DC2626',
-  PENDING: '#D97706',
-  INCONCLUSIVE: '#6B7280',
+  NEGATIVE: Colors.success,
+  POSITIVE: Colors.error,
+  PENDING: Colors.platelet,
+  INCONCLUSIVE: Colors.textMuted,
 }
 
 const RESULT_LABELS: Record<string, string> = {
@@ -66,7 +66,7 @@ export default function TestResultsScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const color = RESULT_COLORS[item.result] ?? '#6B7280'
+          const color = RESULT_COLORS[item.result] ?? Colors.textMuted
           const resultLabel = RESULT_LABELS[item.result] ?? item.result
           const testLabel = TEST_LABELS[item.testType] ?? item.testType
           return (

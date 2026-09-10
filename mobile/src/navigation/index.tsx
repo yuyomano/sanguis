@@ -98,7 +98,7 @@ export default function AppNavigator() {
             <Stack.Screen name="TestResults" component={TestResultsScreen}
               options={{ headerShown: true, headerTitle: 'Resultados', headerTintColor: Colors.blood }} />
             <Stack.Screen name="BloodTracker" component={BloodTrackerScreen}
-              options={{ headerShown: true, headerTitle: 'Rastrear mi Sangre', headerTintColor: Colors.blood }} />
+              options={{ headerShown: true, headerTitle: 'Rastrear mi sangre', headerTintColor: Colors.blood }} />
           </>
         )}
       </Stack.Navigator>

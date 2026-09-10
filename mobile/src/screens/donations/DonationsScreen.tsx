@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, Animated, RefreshControl,
+  View, Text, FlatList, StyleSheet, Animated, RefreshControl, AccessibilityInfo,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { api } from '../../services/api'
@@ -15,10 +15,10 @@ const PRODUCT_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  AVAILABLE: '#059669',
-  USED: '#6B7280',
-  EXPIRED: '#DC2626',
-  QUARANTINE: '#D97706',
+  AVAILABLE: Colors.success,
+  USED: Colors.textMuted,
+  EXPIRED: Colors.error,
+  QUARANTINE: Colors.plasma,
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,12 +32,16 @@ function SkeletonCard() {
   const opacity = useRef(new Animated.Value(0.4)).current
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
-    ).start()
+    // Respeta "reducir movimiento" del sistema (equivalente móvil de prefers-reduced-motion)
+    AccessibilityInfo.isReduceMotionEnabled().then(reduced => {
+      if (reduced) return
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+        ])
+      ).start()
+    })
   }, [])
 
   return (
@@ -77,7 +81,7 @@ export default function DonationsScreen() {
     return (
       <View style={styles.root}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Mis Donaciones</Text>
+          <Text style={styles.headerTitle}>Mis donaciones</Text>
           <Text style={styles.headerSub}>Cargando…</Text>
         </View>
         <View style={styles.list}>
@@ -90,7 +94,7 @@ export default function DonationsScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis Donaciones</Text>
+        <Text style={styles.headerTitle}>Mis donaciones</Text>
         <Text style={styles.headerSub}>{units.length} unidad{units.length !== 1 ? 'es' : ''} registrada{units.length !== 1 ? 's' : ''}</Text>
       </View>
 
@@ -112,8 +116,8 @@ export default function DonationsScreen() {
                 <Text style={styles.productType}>{PRODUCT_LABELS[item.productType] ?? item.productType}</Text>
                 <Text style={styles.bloodType}>{BLOOD_LABELS[item.bloodType]}</Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? '#6B7280') + '20' }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] ?? '#6B7280' }]}>
+              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? Colors.textMuted) + '20' }]}>
+                <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] ?? Colors.textMuted }]}>
                   {STATUS_LABELS[item.status] ?? item.status}
                 </Text>
               </View>
@@ -134,7 +138,7 @@ export default function DonationsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  skelLine: { height: 13, backgroundColor: '#E5E7EB', borderRadius: 6, width: 120 },
+  skelLine: { height: 13, backgroundColor: Colors.border, borderRadius: 6, width: 120 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { backgroundColor: Colors.blood, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: Colors.white },

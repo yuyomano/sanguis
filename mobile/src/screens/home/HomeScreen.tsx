@@ -13,7 +13,7 @@ import { RootStackParamList } from '../../types'
 type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
-const CATEGORY_COLORS = { CASUAL: Colors.textSecondary, RECURRENT: '#0891B2', VIP: '#D97706' }
+const CATEGORY_COLORS = { CASUAL: Colors.textSecondary, RECURRENT: Colors.blood, VIP: Colors.plasma }
 
 export default function HomeScreen({ navigation }: Props) {
   const { logout } = useAuthStore()
@@ -27,8 +27,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   const quickActions = [
     { icon: 'water-drop' as const, label: 'Rastrear\nmi sangre', screen: 'BloodTracker' as const, color: Colors.blood },
-    { icon: 'notifications' as const, label: 'Alertas', screen: 'Notifications' as const, color: '#0891B2' },
-    { icon: 'science' as const, label: 'Resultados', screen: 'TestResults' as const, color: '#059669' },
+    { icon: 'notifications' as const, label: 'Alertas', screen: 'Notifications' as const, color: Colors.plasma },
+    { icon: 'science' as const, label: 'Resultados', screen: 'TestResults' as const, color: Colors.platelet },
     { icon: 'settings' as const, label: 'Ajustes', screen: 'Settings' as const, color: Colors.textSecondary },
   ]
 
@@ -63,13 +63,13 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* Donation status */}
-        <View style={[styles.donateRow, { backgroundColor: canDonate ? Colors.bloodLight : '#F0FDF4' }]}>
+        <View style={[styles.donateRow, { backgroundColor: canDonate ? Colors.bloodLight : Colors.successLight }]}>
           <MaterialIcons
             name={canDonate ? 'favorite' : 'check-circle'}
             size={18}
-            color={canDonate ? Colors.blood : '#059669'}
+            color={canDonate ? Colors.blood : Colors.success}
           />
-          <Text style={[styles.donateText, { color: canDonate ? Colors.blood : '#059669' }]}>
+          <Text style={[styles.donateText, { color: canDonate ? Colors.blood : Colors.success }]}>
             {canDonate
               ? 'Apto para donar hoy'
               : `Próxima donación en ${90 - daysSinceLastDonation!} días`}
@@ -104,7 +104,7 @@ export default function HomeScreen({ navigation }: Props) {
       ) : (
         <View style={styles.referralLocked}>
           <MaterialIcons name="group-add" size={26} color={Colors.textMuted} />
-          <Text style={styles.referralLockedTitle}>Programa de Referidos</Text>
+          <Text style={styles.referralLockedTitle}>Programa de referidos</Text>
           <Text style={styles.referralLockedSub}>
             Completa tu primera donación para desbloquear tu código personal y ganar puntos extra
           </Text>

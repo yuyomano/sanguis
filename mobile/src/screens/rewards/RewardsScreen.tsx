@@ -41,7 +41,7 @@ export default function RewardsScreen() {
     <View style={styles.root}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis Rewards</Text>
+        <Text style={styles.headerTitle}>Mis recompensas</Text>
         <View style={styles.pointsRow}>
           <MaterialIcons name="stars" size={20} color="rgba(255,255,255,0.9)" />
           <Text style={styles.pointsText}>{profile?.pointsBalance?.toLocaleString() ?? '0'} pts</Text>
@@ -111,15 +111,15 @@ export default function RewardsScreen() {
             const isPositive = item.points > 0
             return (
               <View style={styles.txCard}>
-                <View style={[styles.txIcon, { backgroundColor: isPositive ? '#DCFCE7' : Colors.bloodLight }]}>
-                  <MaterialIcons name={isPositive ? 'add' : 'remove'} size={18} color={isPositive ? '#059669' : Colors.blood} />
+                <View style={[styles.txIcon, { backgroundColor: isPositive ? Colors.successLight : Colors.bloodLight }]}>
+                  <MaterialIcons name={isPositive ? 'add' : 'remove'} size={18} color={isPositive ? Colors.success : Colors.blood} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.txDesc}>{item.description ?? item.type}</Text>
                   <Text style={styles.txDate}>{new Date(item.createdAt).toLocaleDateString('es-DO')}</Text>
                 </View>
                 <View>
-                  <Text style={[styles.txPoints, { color: isPositive ? '#059669' : Colors.blood }]}>
+                  <Text style={[styles.txPoints, { color: isPositive ? Colors.success : Colors.blood }]}>
                     {isPositive ? '+' : ''}{item.points}
                   </Text>
                   <Text style={styles.txBalance}>{item.balanceAfter} pts</Text>

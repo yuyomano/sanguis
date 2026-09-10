@@ -16,9 +16,9 @@ const TYPE_ICONS: Record<string, keyof typeof MaterialIcons.glyphMap> = {
 
 const TYPE_COLORS: Record<string, string> = {
   EMERGENCY_ALERT: Colors.blood,
-  PUSH: '#0891B2',
-  EMAIL: '#059669',
-  WHATSAPP: '#16A34A',
+  PUSH: Colors.plasma,
+  EMAIL: Colors.platelet,
+  WHATSAPP: '#16A34A', // verde real de marca WhatsApp — excepción deliberada, no tokenizar
 }
 
 export default function NotificationsScreen() {
