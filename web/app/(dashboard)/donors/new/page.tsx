@@ -66,11 +66,7 @@ export default function NewDonorPage() {
   const [referredBy, setReferredBy] = useState<any>(null)
 
   function set(key: string, value: string) {
-    setForm(f => {
-      const next = { ...f, [key]: value }
-      if (key === 'idNumber' && f.password === f.idNumber) next.password = value
-      return next
-    })
+    setForm(f => ({ ...f, [key]: value }))
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -131,8 +127,9 @@ export default function NewDonorPage() {
       phone: fullPhone,
       bloodType: form.bloodType,
       rhFactor: form.bloodType.endsWith('_POSITIVE'),
-      password: form.password || form.idNumber,
     }
+    // Sin contraseña explícita, la API genera una temporal aleatoria (no usar la cédula).
+    if (form.password.trim()) body.password = form.password.trim()
     if (form.email) body.email = form.email
     if (referredBy) body.referredById = referredBy.id
     if (photoBase64) body.photoUrl = photoBase64
@@ -149,6 +146,9 @@ export default function NewDonorPage() {
       if (!res.ok) {
         setError(Array.isArray(data.message) ? data.message.join(', ') : data.message)
         return
+      }
+      if (data.generatedPassword) {
+        alert(`Contraseña temporal generada para ${data.name}: ${data.generatedPassword}\n\nAnótala — no se volverá a mostrar.`)
       }
       router.push(`/donors/${data.id}`)
     } catch {
@@ -373,11 +373,12 @@ export default function NewDonorPage() {
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Contraseña temporal (app móvil)</label>
             <input
-              value={form.password || form.idNumber}
+              value={form.password}
               onChange={(e) => set('password', e.target.value)}
+              placeholder="Dejar en blanco para generar una automáticamente"
               className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
-            <p className="text-xs text-muted-foreground/70 mt-1">Por defecto es el número de documento.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Si la dejas en blanco, el sistema genera una contraseña aleatoria y te la muestra al crear el donante.</p>
           </div>
         </div>
 

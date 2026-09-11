@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EncryptionService } from '../../common/services/encryption.service';
 import { BloodType, DonorCategory, ExternalDonationStatus, ProductType } from '@prisma/client';
@@ -21,11 +22,12 @@ export class DonorsService {
     private encryption: EncryptionService,
   ) {}
 
-  // Decrypt sensitive fields before returning a donor to callers
-  private decrypt(donor: any): any {
+  // Descifra campos sensibles y quita passwordHash antes de devolver un donante
+  private sanitize(donor: any): any {
     if (!donor) return donor;
+    const { passwordHash: _passwordHash, ...rest } = donor;
     return {
-      ...donor,
+      ...rest,
       adminNotes: donor.adminNotes ? this.encryption.decrypt(donor.adminNotes) : donor.adminNotes,
       fcmToken: donor.fcmToken ? this.encryption.decrypt(donor.fcmToken) : donor.fcmToken,
     };
@@ -35,7 +37,11 @@ export class DonorsService {
     const exists = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
     if (exists) throw new ConflictException('Ya existe un donante con ese número de identificación');
 
-    const passwordHash = await bcrypt.hash(dto.password || dto.idNumber, 12);
+    // ponytail: sin contraseña explícita, genera una temporal aleatoria en vez de
+    // reusar la cédula (dato conocible, no un secreto). Se devuelve una sola vez
+    // en la respuesta para que el staff se la entregue al donante.
+    const generatedPassword = dto.password ? null : crypto.randomBytes(8).toString('base64url');
+    const passwordHash = await bcrypt.hash(dto.password || generatedPassword!, 12);
 
     const donor = await this.prisma.donor.create({
       data: {
@@ -52,7 +58,7 @@ export class DonorsService {
         adminNotes: dto.adminNotes ? this.encryption.encrypt(dto.adminNotes) : null,
       },
     });
-    return this.decrypt(donor);
+    return { ...this.sanitize(donor), ...(generatedPassword ? { generatedPassword } : {}) };
   }
 
   async findAll(query: {
@@ -88,7 +94,7 @@ export class DonorsService {
       this.prisma.donor.count({ where }),
     ]);
 
-    return { donors, total, page, limit };
+    return { donors: donors.map((d) => this.sanitize(d)), total, page, limit };
   }
 
   async findOne(id: string) {
@@ -106,7 +112,7 @@ export class DonorsService {
       },
     });
     if (!donor) throw new NotFoundException('Donante no encontrado');
-    return this.decrypt(donor);
+    return this.sanitize(donor);
   }
 
   async update(id: string, dto: UpdateDonorDto) {
@@ -116,17 +122,19 @@ export class DonorsService {
     if (adminNotes !== undefined) data.adminNotes = adminNotes ? this.encryption.encrypt(adminNotes) : null;
     if (fcmToken !== undefined) data.fcmToken = fcmToken ? this.encryption.encrypt(fcmToken) : null;
     const donor = await this.prisma.donor.update({ where: { id }, data });
-    return this.decrypt(donor);
+    return this.sanitize(donor);
   }
 
   async setCategory(id: string, category: DonorCategory) {
     await this.findOne(id);
-    return this.prisma.donor.update({ where: { id }, data: { category } });
+    const donor = await this.prisma.donor.update({ where: { id }, data: { category } });
+    return this.sanitize(donor);
   }
 
   async setPriority(id: string, isPriority: boolean) {
     await this.findOne(id);
-    return this.prisma.donor.update({ where: { id }, data: { isPriorityDonor: isPriority } });
+    const donor = await this.prisma.donor.update({ where: { id }, data: { isPriorityDonor: isPriority } });
+    return this.sanitize(donor);
   }
 
   async checkEligibility(id: string, productType: ProductType = ProductType.WHOLE_BLOOD) {

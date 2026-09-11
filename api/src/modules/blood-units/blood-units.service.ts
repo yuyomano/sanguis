@@ -129,7 +129,7 @@ export class BloodUnitsService {
     const unit = await this.prisma.bloodUnit.findUnique({
       where: { id },
       include: {
-        donor: true,
+        donor: { select: { id: true, name: true, idNumber: true, phone: true, bloodType: true, rhFactor: true } },
         storageLocation: true,
         testResults: { include: { externalLab: true } },
         deliveryItems: { include: { deliveryOrder: true } },
