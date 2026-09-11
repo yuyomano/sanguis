@@ -180,7 +180,7 @@ export class ExternalDonationsService {
     if (exists) throw new ConflictException('Ya existe un usuario con ese correo');
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    return this.prisma.adminUser.create({
+    const user = await this.prisma.adminUser.create({
       data: {
         email: dto.email,
         passwordHash,
@@ -189,5 +189,7 @@ export class ExternalDonationsService {
         institutionId,
       },
     });
+    const { passwordHash: _passwordHash, ...rest } = user;
+    return rest;
   }
 }

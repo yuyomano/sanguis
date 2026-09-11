@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { WhatsappService } from './whatsapp.service';
 import { EmailService } from './email.service';
 import { FcmService } from './fcm.service';
@@ -12,6 +13,7 @@ export class NotificationsService {
 
   constructor(
     private prisma: PrismaService,
+    private encryption: EncryptionService,
     private whatsapp: WhatsappService,
     private email: EmailService,
     private fcm: FcmService,
@@ -29,8 +31,10 @@ export class NotificationsService {
     const results = { sent: 0, failed: 0 };
     const formattedDate = dayjs(event.startDatetime).format('DD/MM/YYYY [a las] HH:mm');
 
-    // Push FCM a todos los donantes con token registrado
-    const tokens = donors.map((d) => d.fcmToken).filter(Boolean) as string[];
+    // Push FCM a todos los donantes con token registrado (fcmToken se guarda cifrado)
+    const tokens = donors
+      .map((d) => (d.fcmToken ? this.encryption.decrypt(d.fcmToken) : d.fcmToken))
+      .filter(Boolean) as string[];
     await this.fcm.sendToTokens(tokens, {
       title: `🩸 Nuevo evento: ${event.name}`,
       body: `${formattedDate} — ${event.locationAddress}`,

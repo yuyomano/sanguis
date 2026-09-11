@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { WhatsappService } from '../notifications/whatsapp.service';
 import { EmailService } from '../notifications/email.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -65,6 +66,7 @@ const CATEGORY_RANK: Record<string, number> = { VIP: 0, RECURRENT: 1, CASUAL: 2 
 export class EmergencyRequestsService {
   constructor(
     private prisma: PrismaService,
+    private encryption: EncryptionService,
     private whatsapp: WhatsappService,
     private email: EmailService,
     private fcm: FcmService,
@@ -158,7 +160,7 @@ export class EmergencyRequestsService {
         try {
           if (channel === NotificationType.PUSH) {
             if (!donor.fcmToken) throw new Error('Sin token FCM');
-            await this.fcm.sendToTokens([donor.fcmToken], { title, body: bodyText, data: { type: 'emergency', emergencyRequestId: id } });
+            await this.fcm.sendToTokens([this.encryption.decrypt(donor.fcmToken)], { title, body: bodyText, data: { type: 'emergency', emergencyRequestId: id } });
           } else if (channel === NotificationType.WHATSAPP) {
             await this.whatsapp.sendTextMessage(donor.phone, `${title}\n\n${bodyText}`);
           } else if (channel === NotificationType.EMAIL) {
