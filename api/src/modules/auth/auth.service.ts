@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import dayjs from 'dayjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EncryptionService } from '../../common/services/encryption.service';
 import { LoginAdminDto } from './dto/login-admin.dto';
@@ -37,6 +38,14 @@ export class AuthService {
       throw new ConflictException('Proporciona al menos una cédula/pasaporte o un correo electrónico');
     }
 
+    // ponytail: elegibilidad médica real (peso, signos vitales, etc.) la valida el
+    // personal clínico presencialmente; esto solo bloquea el auto-registro de menores/mayores
+    // fuera del rango de edad legal para donar sangre en RD.
+    const age = dayjs().diff(dayjs(dto.birthDate), 'year');
+    if (age < 18 || age > 65) {
+      throw new BadRequestException('Debes tener entre 18 y 65 años para registrarte como donante');
+    }
+
     if (dto.idNumber) {
       const byId = await this.prisma.donor.findUnique({ where: { idNumberHash: this.encryption.hash(dto.idNumber) } });
       if (byId) throw new ConflictException('Ya existe un donante con ese número de identificación');
@@ -60,6 +69,8 @@ export class AuthService {
         bloodType: dto.bloodType,
         rhFactor: dto.rhFactor,
         passwordHash,
+        birthDate: new Date(dto.birthDate),
+        termsAcceptedAt: new Date(),
         city: dto.city ?? null,
         address: dto.address ? this.encryption.encrypt(dto.address) : null,
         latitude: dto.latitude != null ? this.encryption.encrypt(String(dto.latitude)) : null,

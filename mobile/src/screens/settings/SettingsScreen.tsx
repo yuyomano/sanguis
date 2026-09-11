@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   View, Text, Switch, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native'
@@ -12,27 +12,48 @@ export default function SettingsScreen() {
   const { logout } = useAuthStore()
   const { profile } = useDonorStore()
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [shareHistory, setShareHistory] = useState(false)
+  const [savingNotifications, setSavingNotifications] = useState(false)
+  const [savingShareHistory, setSavingShareHistory] = useState(false)
+
+  // ponytail: sincroniza desde el perfil cuando llega/cambia (fetchProfile corre en otras pantallas)
+  useEffect(() => {
+    if (!profile) return
+    setNotificationsEnabled(profile.notificationsEnabled)
+    setShareHistory(profile.shareHistoryWithInstitutions)
+  }, [profile])
 
   async function toggleNotifications(value: boolean) {
     setNotificationsEnabled(value)
     try {
-      setSaving(true)
-      await api.patch('/donors/me', { notificationsEnabled: value })
+      setSavingNotifications(true)
+      await api.patch('/donors/me/notifications', { notificationsEnabled: value })
     } catch {
       setNotificationsEnabled(!value)
       Alert.alert('Error', 'No se pudo guardar la preferencia')
-    } finally { setSaving(false) }
+    } finally { setSavingNotifications(false) }
+  }
+
+  async function toggleShareHistory(value: boolean) {
+    setShareHistory(value)
+    try {
+      setSavingShareHistory(true)
+      await api.patch('/donors/me/consent', { shareHistoryWithInstitutions: value })
+    } catch {
+      setShareHistory(!value)
+      Alert.alert('Error', 'No se pudo guardar la preferencia')
+    } finally { setSavingShareHistory(false) }
   }
 
   const rows = [
     {
       section: 'Notificaciones',
+      hint: 'Las alertas de emergencia siempre se envían, incluso si desactivas esto.',
       items: [
         {
           icon: 'notifications' as const,
-          label: 'Recibir alertas de emergencia',
-          right: saving
+          label: 'Recibir notificaciones de eventos',
+          right: savingNotifications
             ? <ActivityIndicator size="small" color={Colors.blood} />
             : <Switch
                 value={notificationsEnabled}
@@ -44,7 +65,26 @@ export default function SettingsScreen() {
       ],
     },
     {
+      section: 'Privacidad',
+      hint: undefined as string | undefined,
+      items: [
+        {
+          icon: 'share' as const,
+          label: 'Compartir mi historial con instituciones externas',
+          right: savingShareHistory
+            ? <ActivityIndicator size="small" color={Colors.blood} />
+            : <Switch
+                value={shareHistory}
+                onValueChange={toggleShareHistory}
+                thumbColor={Colors.white}
+                trackColor={{ false: Colors.border, true: Colors.blood }}
+              />,
+        },
+      ],
+    },
+    {
       section: 'Cuenta',
+      hint: undefined as string | undefined,
       items: [
         {
           icon: 'person' as const,
@@ -67,7 +107,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      {rows.map(({ section, items }) => (
+      {rows.map(({ section, items, hint }) => (
         <View key={section} style={styles.section}>
           <Text style={styles.sectionLabel}>{section}</Text>
           <View style={styles.card}>
@@ -81,6 +121,7 @@ export default function SettingsScreen() {
               </View>
             ))}
           </View>
+          {hint && <Text style={styles.hint}>{hint}</Text>}
         </View>
       ))}
 
@@ -120,5 +161,6 @@ const styles = StyleSheet.create({
   rowIcon: { marginRight: 12 },
   rowLabel: { fontSize: 15, color: Colors.text },
   rightText: { fontSize: 14, color: Colors.textSecondary, flexShrink: 1 },
+  hint: { fontSize: 12, color: Colors.textMuted, marginTop: 6, marginLeft: 4 },
   version: { textAlign: 'center', fontSize: 12, color: Colors.textMuted, marginTop: 8 },
 })

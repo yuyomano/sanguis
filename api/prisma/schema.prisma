@@ -218,6 +218,9 @@ model Donor {
   longitude                    String?       // cifrado en reposo (era Float)
   // Consentimiento para que instituciones externas (hospitales/otros bancos) consulten su elegibilidad/historial
   shareHistoryWithInstitutions Boolean       @default(false)
+  birthDate                    DateTime?     // elegibilidad real (18-65) la valida el personal clínico; esto es solo un aviso en la app
+  notificationsEnabled         Boolean       @default(true) // opt-out de notificaciones no críticas (broadcast de eventos); alertas de emergencia siempre se envían
+  termsAcceptedAt              DateTime?     // aceptación de Términos/Privacidad en el registro
   createdAt                    DateTime      @default(now())
   updatedAt                    DateTime      @updatedAt
 

@@ -61,4 +61,9 @@ export class UpdateDonorDto {
   @IsBoolean()
   @IsOptional()
   shareHistoryWithInstitutions?: boolean;
+
+  @ApiPropertyOptional({ description: 'Recibir notificaciones no críticas (broadcast de eventos). Las alertas de emergencia siempre se envían.' })
+  @IsBoolean()
+  @IsOptional()
+  notificationsEnabled?: boolean;
 }

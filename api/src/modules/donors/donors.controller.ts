@@ -88,6 +88,14 @@ export class DonorsController {
 
   @ApiBearerAuth()
   @UseGuards(DonorJwtAuthGuard)
+  @Patch('me/notifications')
+  @ApiOperation({ summary: 'Activar/desactivar notificaciones no críticas (broadcast de eventos) del donante autenticado. Las alertas de emergencia siempre se envían.' })
+  updateNotificationPreference(@Request() req: any, @Body('notificationsEnabled') notificationsEnabled: boolean) {
+    return this.donorsService.update(req.user.id, { notificationsEnabled });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(DonorJwtAuthGuard)
   @Patch('me/fcm-token')
   @ApiOperation({ summary: 'Actualizar FCM token del donante autenticado (app móvil)' })
   updateFcmToken(@Request() req: any, @Body('fcmToken') fcmToken: string) {

@@ -23,8 +23,10 @@ export class NotificationsService {
     const event = await this.prisma.donationEvent.findUnique({ where: { id: eventId } });
     if (!event) return;
 
+    // notificationsEnabled: opt-out de broadcast no crítico; las alertas de emergencia
+    // (emergency-requests.service.ts) no se filtran por esto, siempre llegan a donantes compatibles.
     const rawDonors = await this.prisma.donor.findMany({
-      where: { isActive: true },
+      where: { isActive: true, notificationsEnabled: true },
       select: { id: true, name: true, phone: true, email: true, referralCode: true, fcmToken: true },
     });
     const donors = rawDonors.map((d) => ({

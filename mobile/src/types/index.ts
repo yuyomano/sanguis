@@ -32,6 +32,8 @@ export interface Donor {
   address: string | null
   latitude: number | null
   longitude: number | null
+  shareHistoryWithInstitutions: boolean
+  notificationsEnabled: boolean
   appointments?: Appointment[]
 }
 

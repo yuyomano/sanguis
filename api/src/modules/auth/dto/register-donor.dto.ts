@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, IsObject, IsNumber, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, IsObject, IsNumber, IsDateString, Equals, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BloodType, IdType } from '@prisma/client';
 
@@ -38,6 +38,15 @@ export class RegisterDonorDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @ApiProperty({ example: '1998-05-14', description: 'Fecha de nacimiento (ISO 8601). La elegibilidad médica real (18-65) la confirma el personal clínico al donar; esto solo bloquea el auto-registro de menores.' })
+  @IsDateString()
+  birthDate: string;
+
+  @ApiProperty({ example: true, description: 'Debe ser true: confirma que el donante aceptó los Términos de Servicio y la Política de Privacidad' })
+  @IsBoolean()
+  @Equals(true, { message: 'Debes aceptar los Términos de Servicio y la Política de Privacidad' })
+  termsAccepted: boolean;
 
   @ApiPropertyOptional({ description: 'Horarios disponibles para donar' })
   @IsObject()

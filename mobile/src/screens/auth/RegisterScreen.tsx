@@ -1,13 +1,29 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, Switch,
+  ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, Switch, Linking,
 } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { useNavigation } from '@react-navigation/native'
 import { useAuthStore } from '../../store/authStore'
 import { Colors } from '../../theme/colors'
 import { BLOOD_TYPES, BLOOD_LABELS } from '../../types'
+
+// ponytail: placeholder hasta que los Términos/Privacidad tengan URL pública definitiva
+const TERMS_URL = 'https://sanguis.do/legal'
+
+function calcAge(isoDate: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate.trim())
+  if (!m) return null
+  const birth = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  if (isNaN(birth.getTime())) return null
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
 
 // BloodType enum values that map to API's combined bloodType + rhFactor
 const BLOOD_OPTIONS = [
@@ -29,6 +45,7 @@ export default function RegisterScreen() {
     email: '',
     phone: '',
     password: '',
+    birthDate: '',
     bloodType: 'O_POSITIVE',
     rhFactor: true,
     city: '',
@@ -38,6 +55,7 @@ export default function RegisterScreen() {
   })
   const [error, setError] = useState('')
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'done' | 'denied'>('idle')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const { register, isLoading } = useAuthStore()
 
   function set(key: string, value: any) {
@@ -74,6 +92,16 @@ export default function RegisterScreen() {
     if (form.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres'); return
     }
+    const age = calcAge(form.birthDate)
+    if (age === null) {
+      setError('Indica tu fecha de nacimiento en formato AAAA-MM-DD'); return
+    }
+    if (age < 18 || age > 65) {
+      setError('Debes tener entre 18 y 65 años para registrarte como donante'); return
+    }
+    if (!acceptedTerms) {
+      setError('Debes aceptar los Términos de Servicio y la Política de Privacidad'); return
+    }
     setError('')
     try {
       await register({
@@ -84,6 +112,8 @@ export default function RegisterScreen() {
         bloodType: form.bloodType,
         rhFactor: form.rhFactor,
         password: form.password,
+        birthDate: form.birthDate,
+        termsAccepted: acceptedTerms,
         city: form.city || undefined,
         address: form.address || undefined,
         latitude: form.latitude,
@@ -100,6 +130,7 @@ export default function RegisterScreen() {
     { key: 'email', label: 'Correo electrónico (opcional)', placeholder: 'tu@correo.com', keyboard: 'email-address' },
     { key: 'phone', label: 'Teléfono *', placeholder: '+1 809 000 0000', keyboard: 'phone-pad', required: true },
     { key: 'password', label: 'Contraseña *', placeholder: '••••••••', secure: true, required: true },
+    { key: 'birthDate', label: 'Fecha de nacimiento * (AAAA-MM-DD)', placeholder: '1998-05-14', keyboard: 'numeric', required: true },
   ]
 
   return (
@@ -170,6 +201,20 @@ export default function RegisterScreen() {
           )}
         </View>
 
+        <TouchableOpacity style={styles.termsRow} onPress={() => setAcceptedTerms(v => !v)}>
+          <MaterialIcons
+            name={acceptedTerms ? 'check-box' : 'check-box-outline-blank'}
+            size={22}
+            color={acceptedTerms ? Colors.blood : Colors.textMuted}
+          />
+          <Text style={styles.termsText}>
+            Acepto los{' '}
+            <Text style={styles.termsLink} onPress={() => Linking.openURL(TERMS_URL)}>
+              Términos de Servicio y la Política de Privacidad
+            </Text>
+          </Text>
+        </TouchableOpacity>
+
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={isLoading}>
@@ -213,6 +258,9 @@ const styles = StyleSheet.create({
   },
   locationBtnText: { fontSize: 14, fontWeight: '600', color: Colors.blood },
   locationHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 4, marginBottom: 12 },
+  termsText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  termsLink: { color: Colors.blood, fontWeight: '600' },
   error: { color: Colors.error, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   btn: { backgroundColor: Colors.blood, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
