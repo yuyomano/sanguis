@@ -144,7 +144,8 @@ export class AuthService {
     const accessToken = this.jwt.sign({ ...payload, jti });
     const refreshToken = this.jwt.sign({ ...payload, jti }, {
       secret: this.config.get('JWT_REFRESH_SECRET'),
-      expiresIn: refreshExpiresIn,
+      // ponytail: @nestjs/jwt v12 tipa expiresIn como StringValue (branded), no string plano
+      expiresIn: refreshExpiresIn as any,
     });
 
     // Store refresh token record (enables rotation and revocation)
