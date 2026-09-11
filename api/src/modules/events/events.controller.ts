@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -15,6 +15,12 @@ export class EventsController {
   @ApiOperation({ summary: 'Eventos próximos (público para app móvil)' })
   findUpcoming() {
     return this.eventsService.findUpcoming();
+  }
+
+  @Get('public/:id')
+  @ApiOperation({ summary: 'Detalle de evento sin datos de otros donantes (público para app móvil)' })
+  findOnePublic(@Param('id') id: string) {
+    return this.eventsService.findOnePublic(id);
   }
 
   @ApiBearerAuth()
@@ -45,8 +51,8 @@ export class EventsController {
   @UseGuards(DonorJwtAuthGuard)
   @Post('appointments')
   @ApiOperation({ summary: 'Reservar cita en evento' })
-  bookAppointment(@Body() dto: CreateAppointmentDto) {
-    return this.eventsService.bookAppointment(dto);
+  bookAppointment(@Request() req: any, @Body() dto: CreateAppointmentDto) {
+    return this.eventsService.bookAppointment(req.user.id, dto);
   }
 
   @Post('checkin/:qrCode')
@@ -59,7 +65,7 @@ export class EventsController {
   @UseGuards(DonorJwtAuthGuard)
   @Delete('appointments/:id')
   @ApiOperation({ summary: 'Cancelar cita' })
-  cancel(@Param('id') id: string) {
-    return this.eventsService.cancelAppointment(id);
+  cancel(@Request() req: any, @Param('id') id: string) {
+    return this.eventsService.cancelAppointment(id, req.user.id);
   }
 }

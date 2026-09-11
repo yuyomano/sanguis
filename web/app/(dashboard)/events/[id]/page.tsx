@@ -27,6 +27,9 @@ const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
   AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
 }
+const PRODUCT_LABELS: Record<string, string> = {
+  WHOLE_BLOOD: 'Sangre completa', PLATELETS: 'Plaquetas', PLASMA: 'Plasma',
+}
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -182,7 +185,9 @@ export default function EventDetailPage() {
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Donante</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Contacto</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Producto</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Hora</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Estado</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">QR</th>
@@ -196,12 +201,15 @@ export default function EventDetailPage() {
                   <tr key={appt.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3">
                       <p className="text-sm font-medium text-foreground">{appt.donor?.name}</p>
-                      <p className="text-xs text-muted-foreground/70">{appt.donor?.phone}</p>
                     </td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground">{appt.donor?.phone}</td>
                     <td className="px-5 py-3">
                       <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-xs font-bold">
                         {BLOOD_LABELS[appt.donor?.bloodType] || '?'}
                       </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-foreground">
+                      {PRODUCT_LABELS[appt.productType] || appt.productType}
                     </td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">
                       {appt.scheduledTime

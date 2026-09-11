@@ -32,7 +32,16 @@ export interface Donor {
   address: string | null
   latitude: number | null
   longitude: number | null
+  appointments?: Appointment[]
 }
+
+export type ProductType = 'WHOLE_BLOOD' | 'PLATELETS' | 'PLASMA'
+
+export const PRODUCT_LABELS: Record<ProductType, string> = {
+  WHOLE_BLOOD: 'Sangre completa', PLATELETS: 'Plaquetas', PLASMA: 'Plasma',
+}
+
+export const PRODUCT_TYPES: ProductType[] = ['WHOLE_BLOOD', 'PLATELETS', 'PLASMA']
 
 export interface BloodUnit {
   id: string
@@ -46,13 +55,24 @@ export interface BloodUnit {
 export interface DonationEvent {
   id: string
   name: string
+  type: string
   description: string | null
-  startDate: string
-  endDate: string
-  locationName: string
+  startDatetime: string
+  endDatetime: string
   locationAddress: string
+  capacity: number
+  registeredCount: number
   status: string
-  targetUnits: number | null
+}
+
+export interface Appointment {
+  id: string
+  eventId: string
+  scheduledTime: string
+  productType: ProductType
+  status: 'SCHEDULED' | 'CHECKED_IN' | 'CANCELLED' | 'NO_SHOW' | 'COMPLETED'
+  qrCode: string
+  event?: DonationEvent
 }
 
 export interface Partner {
@@ -95,6 +115,7 @@ export type RootStackParamList = {
   Register: undefined
   MainTabs: undefined
   EventDetail: { id: string; name: string }
+  BookAppointment: { eventId: string; eventName: string }
   Notifications: undefined
   Settings: undefined
   TestResults: undefined

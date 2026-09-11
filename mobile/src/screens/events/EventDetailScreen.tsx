@@ -1,26 +1,57 @@
 import React, { useEffect, useState } from 'react'
 import {
-  View, Text, ScrollView, StyleSheet, ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
-import { DonationEvent, RootStackParamList } from '../../types'
+import { useDonorStore } from '../../store/donorStore'
+import { DonationEvent, RootStackParamList, PRODUCT_LABELS } from '../../types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventDetail'>
 
-export default function EventDetailScreen({ route }: Props) {
+const APPT_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: 'Pendiente', CHECKED_IN: 'Presente', COMPLETED: 'Completada',
+}
+
+export default function EventDetailScreen({ route, navigation }: Props) {
   const { id } = route.params
   const [event, setEvent] = useState<DonationEvent | null>(null)
   const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
+  const { profile, fetchProfile } = useDonorStore()
 
   useEffect(() => {
-    api.get(`/donation-events/${id}`)
+    api.get(`/events/public/${id}`)
       .then(r => setEvent(r.data))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
+
+  const myAppointment = profile?.appointments?.find(
+    a => a.eventId === id && (a.status === 'SCHEDULED' || a.status === 'CHECKED_IN'),
+  )
+
+  function confirmCancel() {
+    if (!myAppointment) return
+    Alert.alert('Cancelar cita', '¿Seguro que quieres cancelar tu cita?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
+          setCancelling(true)
+          try {
+            await api.delete(`/events/appointments/${myAppointment.id}`)
+            await fetchProfile()
+          } catch {
+            Alert.alert('Error', 'No se pudo cancelar la cita')
+          } finally {
+            setCancelling(false)
+          }
+        },
+      },
+    ])
+  }
 
   if (loading) {
     return <View style={styles.center}><ActivityIndicator size="large" color={Colors.blood} /></View>
@@ -30,12 +61,13 @@ export default function EventDetailScreen({ route }: Props) {
     return <View style={styles.center}><Text style={styles.errorText}>Evento no encontrado</Text></View>
   }
 
+  const full = event.registeredCount >= event.capacity
+
   const rows = [
-    { icon: 'event' as const, label: 'Inicio', value: new Date(event.startDate).toLocaleString('es-DO') },
-    { icon: 'event-available' as const, label: 'Fin', value: new Date(event.endDate).toLocaleString('es-DO') },
-    { icon: 'location-on' as const, label: 'Lugar', value: event.locationName },
+    { icon: 'event' as const, label: 'Inicio', value: new Date(event.startDatetime).toLocaleString('es-DO') },
+    { icon: 'event-available' as const, label: 'Fin', value: new Date(event.endDatetime).toLocaleString('es-DO') },
     { icon: 'place' as const, label: 'Dirección', value: event.locationAddress },
-    { icon: 'favorite' as const, label: 'Meta de unidades', value: event.targetUnits ? `${event.targetUnits} unidades` : 'Sin meta definida' },
+    { icon: 'groups' as const, label: 'Cupo', value: `${event.registeredCount} / ${event.capacity} registrados` },
   ]
 
   return (
@@ -59,6 +91,31 @@ export default function EventDetailScreen({ route }: Props) {
           </View>
         ) : null)}
       </View>
+
+      {myAppointment ? (
+        <View style={styles.detailsCard}>
+          <Text style={styles.apptTitle}>Ya tienes una cita aquí</Text>
+          <Text style={styles.apptLine}>
+            {new Date(myAppointment.scheduledTime).toLocaleString('es-DO', { dateStyle: 'medium', timeStyle: 'short' })}
+          </Text>
+          <Text style={styles.apptLine}>{PRODUCT_LABELS[myAppointment.productType]}</Text>
+          <Text style={styles.apptLine}>Estado: {APPT_STATUS_LABELS[myAppointment.status] ?? myAppointment.status}</Text>
+          {myAppointment.status === 'SCHEDULED' && (
+            <TouchableOpacity style={styles.cancelButton} onPress={confirmCancel} disabled={cancelling}>
+              <Text style={styles.cancelButtonText}>{cancelling ? 'Cancelando…' : 'Cancelar cita'}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[styles.bookButton, full && styles.bookButtonDisabled]}
+          disabled={full}
+          onPress={() => navigation.navigate('BookAppointment', { eventId: event.id, eventName: event.name })}
+        >
+          <MaterialIcons name="event-available" size={18} color={Colors.white} />
+          <Text style={styles.bookButtonText}>{full ? 'Evento lleno' : 'Reservar cita'}</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   )
 }
@@ -86,4 +143,14 @@ const styles = StyleSheet.create({
   rowIcon: { marginTop: 2 },
   rowLabel: { fontSize: 12, color: Colors.textSecondary, marginBottom: 2 },
   rowValue: { fontSize: 15, fontWeight: '600', color: Colors.text },
+  apptTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  apptLine: { fontSize: 14, color: Colors.textSecondary },
+  cancelButton: { marginTop: 4, alignSelf: 'flex-start' },
+  cancelButtonText: { color: Colors.error, fontWeight: '700', fontSize: 14 },
+  bookButton: {
+    flexDirection: 'row', gap: 8, backgroundColor: Colors.blood, borderRadius: 14,
+    paddingVertical: 15, alignItems: 'center', justifyContent: 'center',
+  },
+  bookButtonDisabled: { backgroundColor: Colors.textMuted },
+  bookButtonText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 })

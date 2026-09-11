@@ -25,8 +25,8 @@ export default function EventsScreen({ navigation }: Props) {
   async function load(isRefresh = false) {
     if (isRefresh) setRefreshing(true); else setLoading(true)
     try {
-      const { data } = await api.get('/donation-events')
-      setEvents(data.data ?? data)
+      const { data } = await api.get('/events/upcoming')
+      setEvents(data)
     } catch {} finally { setLoading(false); setRefreshing(false) }
   }
 
@@ -64,7 +64,7 @@ export default function EventsScreen({ navigation }: Props) {
                 <Text style={styles.eventName} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.locationRow}>
                   <MaterialIcons name="location-on" size={14} color={Colors.textSecondary} />
-                  <Text style={styles.locationText} numberOfLines={1}>{item.locationName}</Text>
+                  <Text style={styles.locationText} numberOfLines={1}>{item.locationAddress}</Text>
                 </View>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? Colors.textMuted) + '20' }]}>
@@ -76,11 +76,9 @@ export default function EventsScreen({ navigation }: Props) {
             <View style={styles.dateRow}>
               <MaterialIcons name="event" size={14} color={Colors.textMuted} />
               <Text style={styles.dateText}>
-                {new Date(item.startDate).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {new Date(item.startDatetime).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
-              {item.targetUnits ? (
-                <Text style={styles.unitsText}> · Meta: {item.targetUnits} unidades</Text>
-              ) : null}
+              <Text style={styles.unitsText}> · {item.registeredCount}/{item.capacity} registrados</Text>
             </View>
           </TouchableOpacity>
         )}

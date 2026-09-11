@@ -17,6 +17,7 @@ import HomeScreen from '../screens/home/HomeScreen'
 import DonationsScreen from '../screens/donations/DonationsScreen'
 import EventsScreen from '../screens/events/EventsScreen'
 import EventDetailScreen from '../screens/events/EventDetailScreen'
+import BookAppointmentScreen from '../screens/events/BookAppointmentScreen'
 import RewardsScreen from '../screens/rewards/RewardsScreen'
 import ProfileScreen from '../screens/profile/ProfileScreen'
 import NotificationsScreen from '../screens/notifications/NotificationsScreen'
@@ -91,6 +92,8 @@ export default function AppNavigator() {
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="EventDetail" component={EventDetailScreen}
               options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Eventos', headerTintColor: Colors.blood }} />
+            <Stack.Screen name="BookAppointment" component={BookAppointmentScreen}
+              options={{ headerShown: true, headerTitle: 'Reservar cita', headerBackTitle: 'Atrás', headerTintColor: Colors.blood }} />
             <Stack.Screen name="Notifications" component={NotificationsScreen}
               options={{ headerShown: true, headerTitle: 'Notificaciones', headerTintColor: Colors.blood }} />
             <Stack.Screen name="Settings" component={SettingsScreen}

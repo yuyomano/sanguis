@@ -34,6 +34,12 @@ export class EventsService {
     return event;
   }
 
+  async findOnePublic(id: string) {
+    const event = await this.prisma.donationEvent.findUnique({ where: { id } });
+    if (!event) throw new NotFoundException('Evento no encontrado');
+    return event;
+  }
+
   async findUpcoming() {
     return this.prisma.donationEvent.findMany({
       where: {
@@ -60,7 +66,7 @@ export class EventsService {
     return { events, total, page: p, limit: l };
   }
 
-  async bookAppointment(dto: CreateAppointmentDto) {
+  async bookAppointment(donorId: string, dto: CreateAppointmentDto) {
     const event = await this.prisma.donationEvent.findUnique({ where: { id: dto.eventId } });
     if (!event) throw new NotFoundException('Evento no encontrado');
     if (event.registeredCount >= event.capacity) {
@@ -69,7 +75,7 @@ export class EventsService {
 
     const existing = await this.prisma.appointment.findFirst({
       where: {
-        donorId: dto.donorId,
+        donorId,
         eventId: dto.eventId,
         status: { notIn: [AppointmentStatus.CANCELLED] },
       },
@@ -80,9 +86,10 @@ export class EventsService {
     const [appointment] = await this.prisma.$transaction([
       this.prisma.appointment.create({
         data: {
-          donorId: dto.donorId,
+          donorId,
           eventId: dto.eventId,
           scheduledTime: new Date(dto.scheduledTime),
+          productType: dto.productType,
           qrCode,
         },
       }),
@@ -112,9 +119,11 @@ export class EventsService {
     });
   }
 
-  async cancelAppointment(id: string) {
+  async cancelAppointment(id: string, donorId: string) {
     const appointment = await this.prisma.appointment.findUnique({ where: { id } });
-    if (!appointment) throw new NotFoundException('Cita no encontrada');
+    if (!appointment || appointment.donorId !== donorId) {
+      throw new NotFoundException('Cita no encontrada');
+    }
 
     await this.prisma.$transaction([
       this.prisma.appointment.update({

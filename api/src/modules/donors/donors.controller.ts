@@ -72,6 +72,14 @@ export class DonorsController {
 
   @ApiBearerAuth()
   @UseGuards(DonorJwtAuthGuard)
+  @Patch('me/consent')
+  @ApiOperation({ summary: 'Autorizar/revocar que instituciones externas consulten su elegibilidad e historial' })
+  updateConsent(@Request() req: any, @Body('shareHistoryWithInstitutions') shareHistoryWithInstitutions: boolean) {
+    return this.donorsService.update(req.user.id, { shareHistoryWithInstitutions });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(DonorJwtAuthGuard)
   @Patch('me/fcm-token')
   @ApiOperation({ summary: 'Actualizar FCM token del donante autenticado (app móvil)' })
   updateFcmToken(@Request() req: any, @Body('fcmToken') fcmToken: string) {

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EncryptionService } from '../../common/services/encryption.service';
-import { BloodType, DonorCategory, ProductType } from '@prisma/client';
+import { BloodType, DonorCategory, ExternalDonationStatus, ProductType } from '@prisma/client';
 import { CreateDonorDto } from './dto/create-donor.dto';
 import { UpdateDonorDto } from './dto/update-donor.dto';
 import dayjs from 'dayjs';
@@ -145,9 +145,15 @@ export class DonorsService {
 
   async recalculateCategory(donorId: string) {
     const yearStart = dayjs().startOf('year').toDate();
-    const donationsThisYear = await this.prisma.bloodUnit.count({
-      where: { donorId, collectionDate: { gte: yearStart } },
-    });
+    const [ownDonations, externalDonations] = await Promise.all([
+      this.prisma.bloodUnit.count({
+        where: { donorId, collectionDate: { gte: yearStart } },
+      }),
+      this.prisma.externalDonation.count({
+        where: { donorId, status: ExternalDonationStatus.VERIFIED, donationDate: { gte: yearStart } },
+      }),
+    ]);
+    const donationsThisYear = ownDonations + externalDonations;
 
     let category: DonorCategory = DonorCategory.CASUAL;
     if (donationsThisYear >= 6) category = DonorCategory.VIP;

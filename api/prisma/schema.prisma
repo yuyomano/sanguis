@@ -88,6 +88,7 @@ enum DeliveryStatus {
 
 enum PointTransactionType {
   DONATION
+  EXTERNAL_DONATION
   REFERRAL
   FREQUENT_MILESTONE
   BONUS
@@ -123,6 +124,27 @@ enum AdminRole {
   LAB_TECH
   LOGISTICS
   PARTNER
+  INSTITUTION
+}
+
+// ─── EXTERNAL DONATIONS (hospitales / otros bancos / eventos de terceros) ─────
+
+enum InstitutionType {
+  BLOOD_BANK
+  HOSPITAL
+  THIRD_PARTY_EVENT
+}
+
+enum DonationReporter {
+  DONOR_SELF
+  INSTITUTION
+  ADMIN
+}
+
+enum ExternalDonationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 enum NotificationType {
@@ -156,49 +178,56 @@ model AdminUser {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // Solo aplica a role = INSTITUTION: la institución (hospital/banco externo) que este usuario representa
+  institutionId String?
+  institution   PartnerInstitution? @relation(fields: [institutionId], references: [id])
+
   @@map("admin_users")
 }
 
 // ─── DONORS ──────────────────────────────────────────────────────────────────
 
 model Donor {
-  id               String        @id @default(uuid())
-  name             String
-  idType           IdType?
-  idNumber         String?       @unique
-  phone            String
-  email            String?       @unique
-  bloodType        BloodType
-  rhFactor         Boolean
-  reactiveStatus   Json?
-  category         DonorCategory @default(CASUAL)
-  availableTimes   Json?
-  totalDonations   Int           @default(0)
-  lastDonationDate DateTime?
-  isPriorityDonor  Boolean       @default(false)
-  pointsBalance    Int           @default(0)
-  passwordHash     String
-  referralCode     String        @unique @default(uuid())
-  photoUrl         String?
-  adminNotes       String?
-  fcmToken         String?
-  isActive         Boolean       @default(true)
-  city             String?
-  address          String?
-  latitude         Float?
-  longitude        Float?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                           String        @id @default(uuid())
+  name                         String
+  idType                       IdType?
+  idNumber                     String?       @unique
+  phone                        String
+  email                        String?       @unique
+  bloodType                    BloodType
+  rhFactor                     Boolean
+  reactiveStatus               Json?
+  category                     DonorCategory @default(CASUAL)
+  availableTimes               Json?
+  totalDonations               Int           @default(0)
+  lastDonationDate             DateTime?
+  isPriorityDonor              Boolean       @default(false)
+  pointsBalance                Int           @default(0)
+  passwordHash                 String
+  referralCode                 String        @unique @default(uuid())
+  photoUrl                     String?
+  adminNotes                   String?
+  fcmToken                     String?
+  isActive                     Boolean       @default(true)
+  city                         String?
+  address                      String?
+  latitude                     Float?
+  longitude                    Float?
+  // Consentimiento para que instituciones externas (hospitales/otros bancos) consulten su elegibilidad/historial
+  shareHistoryWithInstitutions Boolean       @default(false)
+  createdAt                    DateTime      @default(now())
+  updatedAt                    DateTime      @updatedAt
 
-  referredById     String?
-  referredBy       Donor?        @relation("DonorReferrals", fields: [referredById], references: [id])
-  referrals        Donor[]       @relation("DonorReferrals")
+  referredById String?
+  referredBy   Donor?  @relation("DonorReferrals", fields: [referredById], references: [id])
+  referrals    Donor[] @relation("DonorReferrals")
 
-  bloodUnits       BloodUnit[]
-  appointments     Appointment[]
+  bloodUnits        BloodUnit[]
+  appointments      Appointment[]
   pointTransactions PointTransaction[]
-  redemptions      Redemption[]
-  notifications    Notification[]
+  redemptions       Redemption[]
+  notifications     Notification[]
+  externalDonations ExternalDonation[]
 
   @@map("donors")
 }
@@ -213,34 +242,34 @@ model StorageLocation {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  bloodUnits  BloodUnit[]
+  bloodUnits BloodUnit[]
 
   @@map("storage_locations")
 }
 
 model BloodUnit {
-  id                String          @id @default(uuid())
-  bagNumber         String          @unique
+  id                String           @id @default(uuid())
+  bagNumber         String           @unique
   donorId           String
-  donor             Donor           @relation(fields: [donorId], references: [id])
+  donor             Donor            @relation(fields: [donorId], references: [id])
   collectionDate    DateTime
   bloodType         BloodType
   rhFactor          Boolean
   productType       ProductType
   volumeMl          Int
-  status            BloodUnitStatus @default(COLLECTED)
+  status            BloodUnitStatus  @default(COLLECTED)
   storageLocationId String?
   storageLocation   StorageLocation? @relation(fields: [storageLocationId], references: [id])
   storageShelf      String?
   expirationDate    DateTime?
   usedAt            DateTime?
   usedForNote       String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  testResults       TestResult[]
-  deliveryItems     DeliveryOrderItem[]
-  financialRecords  FinancialRecord[]
+  testResults      TestResult[]
+  deliveryItems    DeliveryOrderItem[]
+  financialRecords FinancialRecord[]
 
   @@map("blood_units")
 }
@@ -264,22 +293,22 @@ model ExternalLab {
 }
 
 model TestResult {
-  id              String      @id @default(uuid())
+  id              String       @id @default(uuid())
   bloodUnitId     String
-  bloodUnit       BloodUnit   @relation(fields: [bloodUnitId], references: [id])
+  bloodUnit       BloodUnit    @relation(fields: [bloodUnitId], references: [id])
   labType         TestLabType
   externalLabId   String?
   externalLab     ExternalLab? @relation(fields: [externalLabId], references: [id])
   technicianId    String?
-  testDate        DateTime    @default(now())
+  testDate        DateTime     @default(now())
   resultDate      DateTime?
   results         Json?
   isViable        Boolean?
   notes           String?
-  sharedWithDonor Boolean     @default(false)
+  sharedWithDonor Boolean      @default(false)
   sharedAt        DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@map("test_results")
 }
@@ -303,7 +332,7 @@ model DonationEvent {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  appointments    Appointment[]
+  appointments Appointment[]
 
   @@map("donation_events")
 }
@@ -315,6 +344,7 @@ model Appointment {
   eventId       String
   event         DonationEvent     @relation(fields: [eventId], references: [id])
   scheduledTime DateTime
+  productType   ProductType       @default(WHOLE_BLOOD)
   qrCode        String            @unique @default(uuid())
   status        AppointmentStatus @default(SCHEDULED)
   checkedInAt   DateTime?
@@ -326,17 +356,63 @@ model Appointment {
   @@map("appointments")
 }
 
+// ─── EXTERNAL DONATIONS ────────────────────────────────────────────────────────
+// Donaciones que el donante hizo fuera de Sanguis (otro banco, hospital, evento de
+// terceros) — no generan BloodUnit propio, solo se registran para fidelización e
+// historial (elegibilidad, categoría, puntos).
+
+model PartnerInstitution {
+  id        String          @id @default(uuid())
+  name      String
+  type      InstitutionType
+  city      String?
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  users             AdminUser[]
+  externalDonations ExternalDonation[]
+
+  @@map("partner_institutions")
+}
+
+model ExternalDonation {
+  id            String                 @id @default(uuid())
+  donorId       String
+  donor         Donor                  @relation(fields: [donorId], references: [id])
+  donationDate  DateTime
+  productType   ProductType            @default(WHOLE_BLOOD)
+  sourceType    InstitutionType
+  sourceName    String
+  institutionId String?
+  institution   PartnerInstitution?    @relation(fields: [institutionId], references: [id])
+  reportedBy    DonationReporter
+  status        ExternalDonationStatus @default(PENDING)
+  proofUrl      String?
+  notes         String?
+  pointsAwarded Int?
+  verifiedById  String?
+  verifiedAt    DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@map("external_donations")
+}
+
 // ─── LOGISTICS ────────────────────────────────────────────────────────────────
 
 model Vehicle {
-  id             String   @id @default(uuid())
-  plate          String   @unique
-  type           String
-  capacityUnits  Int
-  driverName     String
-  driverPhone    String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  id            String   @id @default(uuid())
+  plate         String   @unique
+  type          String
+  capacityUnits Int
+  driverName    String
+  driverPhone   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   deliveryOrders DeliveryOrder[]
 
@@ -353,34 +429,34 @@ model DeliveryProtocol {
   handlingInstructions String?
   createdAt            DateTime @default(now())
 
-  deliveryOrders       DeliveryOrder[]
+  deliveryOrders DeliveryOrder[]
 
   @@map("delivery_protocols")
 }
 
 model DeliveryOrder {
-  id                  String           @id @default(uuid())
-  destinationName     String
-  destinationAddress  String
-  carrierType         CarrierType
-  vehicleId           String?
-  vehicle             Vehicle?         @relation(fields: [vehicleId], references: [id])
-  thirdPartyCarrier   String?
-  thirdPartyGuide     String?
-  protocolId          String?
-  protocol            DeliveryProtocol? @relation(fields: [protocolId], references: [id])
-  baseCost            Float            @default(0)
-  lastMileCost        Float            @default(0)
-  chainOfCustody      Json             @default("[]")
-  status              DeliveryStatus   @default(PENDING)
-  dispatchedAt        DateTime?
-  deliveredAt         DateTime?
-  notes               String?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  id                 String            @id @default(uuid())
+  destinationName    String
+  destinationAddress String
+  carrierType        CarrierType
+  vehicleId          String?
+  vehicle            Vehicle?          @relation(fields: [vehicleId], references: [id])
+  thirdPartyCarrier  String?
+  thirdPartyGuide    String?
+  protocolId         String?
+  protocol           DeliveryProtocol? @relation(fields: [protocolId], references: [id])
+  baseCost           Float             @default(0)
+  lastMileCost       Float             @default(0)
+  chainOfCustody     Json              @default("[]")
+  status             DeliveryStatus    @default(PENDING)
+  dispatchedAt       DateTime?
+  deliveredAt        DateTime?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
-  items               DeliveryOrderItem[]
-  financialRecords    FinancialRecord[]
+  items            DeliveryOrderItem[]
+  financialRecords FinancialRecord[]
 
   @@map("delivery_orders")
 }
@@ -398,14 +474,14 @@ model DeliveryOrderItem {
 // ─── REWARDS ─────────────────────────────────────────────────────────────────
 
 model PointRule {
-  id          String        @id @default(uuid())
-  type        PointRuleType
-  name        String
-  points      Int
-  conditions  Json          @default("{}")
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id         String        @id @default(uuid())
+  type       PointRuleType
+  name       String
+  points     Int
+  conditions Json          @default("{}")
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   @@map("point_rules")
 }
@@ -425,36 +501,36 @@ model PointTransaction {
 }
 
 model PartnerEstablishment {
-  id                String       @id @default(uuid())
-  name              String
-  category          String
-  taxId             String?
-  taxDeductionPct   Float        @default(0)
-  address           String?
-  phone             String?
-  email             String?
-  logoUrl           String?
-  availableRewards  Json         @default("[]")
-  isActive          Boolean      @default(true)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  category         String
+  taxId            String?
+  taxDeductionPct  Float    @default(0)
+  address          String?
+  phone            String?
+  email            String?
+  logoUrl          String?
+  availableRewards Json     @default("[]")
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  redemptions       Redemption[]
+  redemptions Redemption[]
 
   @@map("partner_establishments")
 }
 
 model Redemption {
-  id           String               @id @default(uuid())
-  donorId      String
-  donor        Donor                @relation(fields: [donorId], references: [id])
-  partnerId    String
-  partner      PartnerEstablishment @relation(fields: [partnerId], references: [id])
-  pointsUsed   Int
-  dopValue     Float
+  id            String               @id @default(uuid())
+  donorId       String
+  donor         Donor                @relation(fields: [donorId], references: [id])
+  partnerId     String
+  partner       PartnerEstablishment @relation(fields: [partnerId], references: [id])
+  pointsUsed    Int
+  dopValue      Float
   receiptNumber String?
-  taxEligible  Boolean              @default(true)
-  redeemedAt   DateTime             @default(now())
+  taxEligible   Boolean              @default(true)
+  redeemedAt    DateTime             @default(now())
 
   @@map("redemptions")
 }
@@ -476,23 +552,23 @@ model NotificationTemplate {
 }
 
 model Notification {
-  id                 String             @id @default(uuid())
-  donorId            String?
-  donor              Donor?             @relation(fields: [donorId], references: [id])
-  type               NotificationType
-  templateId         String?
-  recipient          String
-  subject            String?
-  body               String
-  status             NotificationStatus @default(PENDING)
-  externalId         String?
-  sentAt             DateTime?
-  deliveredAt        DateTime?
-  error              String?
-  createdAt          DateTime           @default(now())
+  id          String             @id @default(uuid())
+  donorId     String?
+  donor       Donor?             @relation(fields: [donorId], references: [id])
+  type        NotificationType
+  templateId  String?
+  recipient   String
+  subject     String?
+  body        String
+  status      NotificationStatus @default(PENDING)
+  externalId  String?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  error       String?
+  createdAt   DateTime           @default(now())
 
   emergencyRequestId String?
-  emergencyRequest   EmergencyRequest?  @relation(fields: [emergencyRequestId], references: [id])
+  emergencyRequest   EmergencyRequest? @relation(fields: [emergencyRequestId], references: [id])
 
   @@map("notifications")
 }
@@ -500,20 +576,20 @@ model Notification {
 // ─── FINANCE ─────────────────────────────────────────────────────────────────
 
 model FinancialRecord {
-  id            String              @id @default(uuid())
-  type          FinancialRecordType
-  category      FinancialCategory
-  amount        Float
-  currency      String              @default("DOP")
-  date          DateTime
-  bloodUnitId   String?
-  bloodUnit     BloodUnit?          @relation(fields: [bloodUnitId], references: [id])
-  deliveryId    String?
-  delivery      DeliveryOrder?      @relation(fields: [deliveryId], references: [id])
-  referenceId   String?
-  description   String?
-  notes         String?
-  createdAt     DateTime            @default(now())
+  id          String              @id @default(uuid())
+  type        FinancialRecordType
+  category    FinancialCategory
+  amount      Float
+  currency    String              @default("DOP")
+  date        DateTime
+  bloodUnitId String?
+  bloodUnit   BloodUnit?          @relation(fields: [bloodUnitId], references: [id])
+  deliveryId  String?
+  delivery    DeliveryOrder?      @relation(fields: [deliveryId], references: [id])
+  referenceId String?
+  description String?
+  notes       String?
+  createdAt   DateTime            @default(now())
 
   @@map("financial_records")
 }
@@ -534,11 +610,11 @@ model Badge {
 }
 
 model DonorBadge {
-  id        String   @id @default(uuid())
-  donorId   String
-  badgeId   String
-  badge     Badge    @relation(fields: [badgeId], references: [id])
-  earnedAt  DateTime @default(now())
+  id       String   @id @default(uuid())
+  donorId  String
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt DateTime @default(now())
 
   @@unique([donorId, badgeId])
   @@map("donor_badges")
@@ -547,13 +623,13 @@ model DonorBadge {
 // ─── COLD CHAIN / TEMP LOG ────────────────────────────────────────────────────
 
 model TemperatureLog {
-  id              String   @id @default(uuid())
-  deliveryOrderId String?
+  id                String   @id @default(uuid())
+  deliveryOrderId   String?
   storageLocationId String?
-  tempCelsius     Float
-  recordedAt      DateTime @default(now())
-  recordedBy      String?
-  notes           String?
+  tempCelsius       Float
+  recordedAt        DateTime @default(now())
+  recordedBy        String?
+  notes             String?
 
   @@map("temperature_logs")
 }
@@ -564,7 +640,7 @@ model RefreshToken {
   id        String   @id @default(uuid())
   jti       String   @unique
   userId    String
-  userType  String   // 'donor' | 'admin'
+  userType  String // 'donor' | 'admin'
   expiresAt DateTime
   createdAt DateTime @default(now())
 
@@ -576,9 +652,9 @@ model RefreshToken {
 // ─── EMERGENCY ALERTS ────────────────────────────────────────────────────────
 
 model EmergencyRequest {
-  id                 String                  @id @default(uuid())
+  id                 String                 @id @default(uuid())
   hospitalName       String
-  country            String                  @default("República Dominicana")
+  country            String                 @default("República Dominicana")
   region             String?
   city               String
   address            String?
@@ -586,17 +662,17 @@ model EmergencyRequest {
   longitude          Float?
   bloodType          BloodType
   productType        ProductType
-  unitsNeeded        Int                     @default(1)
-  urgencyLevel       Int                     @default(1)
+  unitsNeeded        Int                    @default(1)
+  urgencyLevel       Int                    @default(1)
   notes              String?
   requesterName      String?
   requesterPhone     String?
-  status             EmergencyRequestStatus  @default(OPEN)
-  targetReachedCount Int                     @default(0)
-  createdAt          DateTime                @default(now())
+  status             EmergencyRequestStatus @default(OPEN)
+  targetReachedCount Int                    @default(0)
+  createdAt          DateTime               @default(now())
   resolvedAt         DateTime?
 
-  notifications      Notification[]
+  notifications Notification[]
 
   @@map("emergency_requests")
 }

@@ -13,6 +13,10 @@ const DONATION_POINTS: Record<ProductType, number> = {
   PLASMA: 120,
 };
 
+// Puntos por donación externa (verificada) — plano, sin bonus de milestone: no pasó
+// por nuestro testing/procesamiento, se premia el hábito de donar, no la unidad.
+const EXTERNAL_DONATION_POINTS = 50;
+
 @Injectable()
 export class RewardsService {
   constructor(private prisma: PrismaService) {}
@@ -76,6 +80,31 @@ export class RewardsService {
     ]);
 
     return { pointsAwarded: totalPoints, newBalance };
+  }
+
+  async awardExternalDonationPoints(donorId: string, externalDonationId: string) {
+    const donor = await this.prisma.donor.findUnique({ where: { id: donorId } });
+    if (!donor) throw new NotFoundException('Donante no encontrado');
+
+    const newBalance = donor.pointsBalance + EXTERNAL_DONATION_POINTS;
+    await this.prisma.$transaction([
+      this.prisma.pointTransaction.create({
+        data: {
+          donorId,
+          type: PointTransactionType.EXTERNAL_DONATION,
+          points: EXTERNAL_DONATION_POINTS,
+          balanceAfter: newBalance,
+          referenceId: externalDonationId,
+          description: 'Donación reportada en institución externa',
+        },
+      }),
+      this.prisma.donor.update({
+        where: { id: donorId },
+        data: { pointsBalance: newBalance },
+      }),
+    ]);
+
+    return { pointsAwarded: EXTERNAL_DONATION_POINTS, newBalance };
   }
 
   async awardReferralPoints(referrerId: string, newDonorId: string) {

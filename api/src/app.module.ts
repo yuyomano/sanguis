@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { FinanceModule } from './modules/finance/finance.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { EmergencyRequestsModule } from './modules/emergency-requests/emergency-requests.module';
+import { ExternalDonationsModule } from './modules/external-donations/external-donations.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { EmergencyRequestsModule } from './modules/emergency-requests/emergency-
     FinanceModule,
     ReportsModule,
     EmergencyRequestsModule,
+    ExternalDonationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

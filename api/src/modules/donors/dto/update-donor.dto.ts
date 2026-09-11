@@ -56,4 +56,9 @@ export class UpdateDonorDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Autoriza a instituciones externas (hospitales/otros bancos) a consultar su elegibilidad/historial' })
+  @IsBoolean()
+  @IsOptional()
+  shareHistoryWithInstitutions?: boolean;
 }
