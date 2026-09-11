@@ -3,19 +3,22 @@ import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { StaticScreenProps, useNavigation } from '@react-navigation/native'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
 import { useDonorStore } from '../../store/donorStore'
-import { DonationEvent, RootStackParamList, PRODUCT_LABELS } from '../../types'
+import { DonationEvent, PRODUCT_LABELS } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'EventDetail'>
+// StaticScreenProps declara los params localmente (sin depender de
+// RootStackParamList) para que la config estática pueda inferirlos sin ciclos.
+type Props = StaticScreenProps<{ id: string; name: string }>
 
 const APPT_STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Pendiente', CHECKED_IN: 'Presente', COMPLETED: 'Completada',
 }
 
-export default function EventDetailScreen({ route, navigation }: Props) {
+export default function EventDetailScreen({ route }: Props) {
+  const navigation = useNavigation()
   const { id } = route.params
   const [event, setEvent] = useState<DonationEvent | null>(null)
   const [loading, setLoading] = useState(true)

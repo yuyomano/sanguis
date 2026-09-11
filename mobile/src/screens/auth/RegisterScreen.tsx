@@ -4,12 +4,10 @@ import {
   ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, Switch,
 } from 'react-native'
 import * as Location from 'expo-location'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import { useAuthStore } from '../../store/authStore'
 import { Colors } from '../../theme/colors'
-import { BLOOD_TYPES, BLOOD_LABELS, RootStackParamList } from '../../types'
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Register'>
+import { BLOOD_TYPES, BLOOD_LABELS } from '../../types'
 
 // BloodType enum values that map to API's combined bloodType + rhFactor
 const BLOOD_OPTIONS = [
@@ -23,7 +21,8 @@ const BLOOD_OPTIONS = [
   { label: 'AB-', bloodType: 'AB_NEGATIVE', rhFactor: false },
 ]
 
-export default function RegisterScreen({ navigation }: Props) {
+export default function RegisterScreen() {
+  const navigation = useNavigation()
   const [form, setForm] = useState({
     name: '',
     idNumber: '',

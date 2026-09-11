@@ -3,15 +3,15 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image,
 } from 'react-native'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useAuthStore } from '../../store/authStore'
 import { Colors } from '../../theme/colors'
-import { RootStackParamList } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
-
-export default function LoginScreen({ navigation }: Props) {
+// Static API (v7): navigation/index.tsx aumenta ReactNavigation.RootParamList
+// globalmente, así que useNavigation() ya viene tipado sin pasarle génerico.
+export default function LoginScreen() {
+  const navigation = useNavigation()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

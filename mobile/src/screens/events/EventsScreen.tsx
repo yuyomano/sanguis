@@ -3,18 +3,10 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { CompositeScreenProps } from '@react-navigation/native'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { useNavigation } from '@react-navigation/native'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
-import { DonationEvent, RootStackParamList, TabParamList } from '../../types'
-
-// ponytail: ver nota en HomeScreen — mismo caso de pantalla de tab que navega al stack padre
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<TabParamList, 'Events'>,
-  NativeStackScreenProps<RootStackParamList>
->
+import { DonationEvent } from '../../types'
 
 const STATUS_COLORS: Record<string, string> = {
   SCHEDULED: Colors.blood, ACTIVE: Colors.success, COMPLETED: Colors.textMuted, CANCELLED: Colors.error,
@@ -23,7 +15,8 @@ const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Programado', ACTIVE: 'Activo', COMPLETED: 'Completado', CANCELLED: 'Cancelado',
 }
 
-export default function EventsScreen({ navigation }: Props) {
+export default function EventsScreen() {
+  const navigation = useNavigation()
   const [events, setEvents] = useState<DonationEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)

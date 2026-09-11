@@ -3,13 +3,14 @@ import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Alert,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { ParamListBase, StaticScreenProps, useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
 import { useDonorStore } from '../../store/donorStore'
-import { DonationEvent, RootStackParamList, ProductType, PRODUCT_TYPES, PRODUCT_LABELS } from '../../types'
+import { DonationEvent, ProductType, PRODUCT_TYPES, PRODUCT_LABELS } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'BookAppointment'>
+type Props = StaticScreenProps<{ eventId: string; eventName: string }>
 
 const SLOT_STEP_MIN = 30
 const MAX_SLOTS = 60
@@ -27,7 +28,10 @@ function buildSlots(event: DonationEvent): Date[] {
   return slots
 }
 
-export default function BookAppointmentScreen({ route, navigation }: Props) {
+export default function BookAppointmentScreen({ route }: Props) {
+  // popToTop es específico del stack nativo, no está en el NavigationProp genérico;
+  // no necesitamos el param list completo aquí, solo el método.
+  const navigation = useNavigation<NativeStackNavigationProp<ParamListBase>>()
   const { eventId, eventName } = route.params
   const { fetchProfile } = useDonorStore()
   const [event, setEvent] = useState<DonationEvent | null>(null)

@@ -2,23 +2,16 @@ import React, { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
-import { CompositeScreenProps } from '@react-navigation/native'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { useNavigation } from '@react-navigation/native'
 import { useAuthStore } from '../../store/authStore'
 import { useDonorStore } from '../../store/donorStore'
 import { Colors } from '../../theme/colors'
-import { BLOOD_LABELS, RootStackParamList, TabParamList } from '../../types'
-
-// ponytail: ver nota en HomeScreen — mismo caso de pantalla de tab que navega al stack padre
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<TabParamList, 'Profile'>,
-  NativeStackScreenProps<RootStackParamList>
->
+import { BLOOD_LABELS } from '../../types'
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
 
-export default function ProfileScreen({ navigation }: Props) {
+export default function ProfileScreen() {
+  const navigation = useNavigation()
   const { logout } = useAuthStore()
   const { profile, updateLocation } = useDonorStore()
   const [updatingLocation, setUpdatingLocation] = useState(false)

@@ -110,22 +110,3 @@ export interface TestResult {
   notes: string | null
 }
 
-export type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  MainTabs: undefined
-  EventDetail: { id: string; name: string }
-  BookAppointment: { eventId: string; eventName: string }
-  Notifications: undefined
-  Settings: undefined
-  TestResults: undefined
-  BloodTracker: undefined
-}
-
-export type TabParamList = {
-  Home: undefined
-  Donations: undefined
-  Events: undefined
-  Rewards: undefined
-  Profile: undefined
-}
