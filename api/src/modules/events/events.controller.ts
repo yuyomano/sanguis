@@ -3,8 +3,14 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { AdminRole } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DonorJwtAuthGuard } from '../../common/guards/donor-jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+
+// Gestión de eventos de donación: logística y administración.
+const EVENT_ADMIN_ROLES = [AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.LOGISTICS];
 
 @ApiTags('events')
 @Controller('events')
@@ -24,7 +30,8 @@ export class EventsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EVENT_ADMIN_ROLES)
   @Post()
   @ApiOperation({ summary: 'Crear evento de donación' })
   createEvent(@Body() dto: CreateEventDto) {
@@ -32,7 +39,8 @@ export class EventsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EVENT_ADMIN_ROLES)
   @Get()
   @ApiOperation({ summary: 'Listar todos los eventos (admin)' })
   findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
@@ -40,7 +48,8 @@ export class EventsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EVENT_ADMIN_ROLES)
   @Get(':id')
   @ApiOperation({ summary: 'Detalle de evento con lista de citas' })
   findOne(@Param('id') id: string) {

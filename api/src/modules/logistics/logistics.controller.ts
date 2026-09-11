@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { DeliveryStatus } from '@prisma/client';
+import { AdminRole, DeliveryStatus } from '@prisma/client';
 import { LogisticsService } from './logistics.service';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -12,9 +14,11 @@ class UpdateDeliveryStatusDto {
   @ApiPropertyOptional() @IsString() @IsOptional() notes?: string;
 }
 
+// Última milla: logística y administración.
 @ApiTags('logistics')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.LOGISTICS)
 @Controller('logistics')
 export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}

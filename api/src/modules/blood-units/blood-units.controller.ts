@@ -1,11 +1,16 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { BloodType, BloodUnitStatus, ProductType } from '@prisma/client';
+import { AdminRole, BloodType, BloodUnitStatus, ProductType } from '@prisma/client';
 import { BloodUnitsService } from './blood-units.service';
 import { CreateBloodUnitDto } from './dto/create-blood-unit.dto';
 import { TransitionStatusDto } from './dto/transition-status.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DonorJwtAuthGuard } from '../../common/guards/donor-jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+
+// Manejo de unidades de sangre: laboratorio (LAB_TECH) y administración.
+const LAB_ROLES = [AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.LAB_TECH];
 
 @ApiTags('blood-units')
 @Controller('blood-units')
@@ -21,7 +26,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Post()
   @ApiOperation({ summary: 'Registrar nueva unidad de sangre recolectada' })
   create(@Body() dto: CreateBloodUnitDto) {
@@ -29,7 +35,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Get()
   @ApiOperation({ summary: 'Listar unidades de sangre con filtros' })
   findAll(
@@ -47,7 +54,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Get('inventory')
   @ApiOperation({ summary: 'Resumen de inventario por tipo de sangre y producto' })
   getInventorySummary() {
@@ -55,7 +63,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Get('locations')
   @ApiOperation({ summary: 'Listar ubicaciones de almacenamiento activas' })
   getLocations() {
@@ -63,7 +72,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Get(':id')
   @ApiOperation({ summary: 'Detalle de una unidad con historial completo' })
   findOne(@Param('id') id: string) {
@@ -71,7 +81,8 @@ export class BloodUnitsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...LAB_ROLES)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Transicionar estado de unidad (COLLECTED→TESTING→...→USED)' })
   transition(@Param('id') id: string, @Body() dto: TransitionStatusDto) {

@@ -1,14 +1,19 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AdminRole } from '@prisma/client';
 import { EmergencyRequestsService } from './emergency-requests.service';
 import { CreateEmergencyRequestDto } from './dto/create-emergency-request.dto';
 import { UpdateEmergencyRequestStatusDto } from './dto/update-status.dto';
 import { NotifyCandidatesDto } from './dto/notify.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
+// Convocatorias de emergencia: administración y laboratorio (LAB_TECH).
 @ApiTags('emergency-requests')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.LAB_TECH)
 @Controller('emergency-requests')
 export class EmergencyRequestsController {
   constructor(private readonly service: EmergencyRequestsService) {}
