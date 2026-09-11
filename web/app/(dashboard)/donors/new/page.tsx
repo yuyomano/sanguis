@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, User, Search, X, Upload } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
@@ -36,9 +37,6 @@ const COUNTRY_CODES = [
 
 export default function NewDonorPage() {
   const router = useRouter()
-  const api = process.env.NEXT_PUBLIC_API_URL
-  const token = () => localStorage.getItem('sanguis_token')
-  const authHeaders = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -97,10 +95,7 @@ export default function NewDonorPage() {
     if (!refSearch.trim()) return
     setRefSearching(true)
     try {
-      const res = await fetch(
-        `${api}/donors?search=${encodeURIComponent(refSearch)}&limit=5`,
-        { headers: { Authorization: `Bearer ${token()}` } },
-      )
+      const res = await apiFetch(`/donors?search=${encodeURIComponent(refSearch)}&limit=5`)
       const data = await res.json()
       setRefResults(data.donors || [])
     } catch {}
@@ -109,8 +104,6 @@ export default function NewDonorPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    const tok = token()
-    if (!tok) { router.replace('/login'); return }
     if (!form.bloodType) { setError('Selecciona el tipo de sangre'); return }
     if (!form.phoneNumber.trim()) { setError('Ingresa el número de teléfono'); return }
 
@@ -136,13 +129,12 @@ export default function NewDonorPage() {
     if (form.adminNotes.trim()) body.adminNotes = form.adminNotes.trim()
 
     try {
-      const res = await fetch(`${api}/donors`, {
+      const res = await apiFetch('/donors', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (res.status === 401) { router.replace('/login'); return }
       if (!res.ok) {
         setError(Array.isArray(data.message) ? data.message.join(', ') : data.message)
         return

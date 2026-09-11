@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Truck, Package, MapPin, Plus, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface DeliveryOrder {
   id: string
@@ -46,13 +47,9 @@ export default function LogisticsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const fetchOrders = useCallback(() => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) { window.location.href = '/login'; return }
     setLoading(true)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/deliveries?page=1&limit=50`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => { if (r.status === 401) { window.location.href = '/login'; throw new Error('401') } return r.json() })
+    apiFetch('/logistics/deliveries?page=1&limit=50')
+      .then((r) => r.json())
       .then((data) => { setOrders(data.orders || []); setTotal(data.total || 0) })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -61,11 +58,10 @@ export default function LogisticsPage() {
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
   const updateStatus = async (id: string, status: string) => {
-    const token = localStorage.getItem('sanguis_token')
     setUpdatingId(id)
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/deliveries/${id}/status`, {
+    await apiFetch(`/logistics/deliveries/${id}/status`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     }).catch(() => {})
     setUpdatingId(null)

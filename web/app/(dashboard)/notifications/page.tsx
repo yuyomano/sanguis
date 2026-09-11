@@ -8,6 +8,7 @@ import {
   getCompatibleDonorTypes, getRecommendedMethod, isUrgentCase,
   buildMessageTemplate,
 } from '../../../lib/hematology'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_TYPES: BloodType[] = ['O_POSITIVE', 'O_NEGATIVE', 'A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE']
 const COMPONENTS: ComponentType[] = ['WHOLE_BLOOD', 'PLATELETS', 'PLASMA']
@@ -68,9 +69,6 @@ export default function NotificationsPage() {
   const [histLoading, setHistLoading] = useState(false)
   const HIST_LIMIT = 30
 
-  const token = () => localStorage.getItem('sanguis_token')
-  const api = process.env.NEXT_PUBLIC_API_URL
-
   const compatibleTypes = getCompatibleDonorTypes(bloodType, component)
   const recommendedMethod = getRecommendedMethod(component)
   const urgent = isUrgentCase(bloodType, component)
@@ -84,9 +82,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     setPreviewLoading(true)
     setPreview(null)
-    fetch(`${api}/notifications/emergency/preview?bloodType=${bloodType}&productType=${component}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    apiFetch(`/notifications/emergency/preview?bloodType=${bloodType}&productType=${component}`)
       .then(r => r.json())
       .then((d: PreviewData) => setPreview(d))
       .catch(() => {})
@@ -98,9 +94,9 @@ export default function NotificationsPage() {
     setResult(null)
     const urgencyLevel = URGENCY_OPTS.find(o => o.value === urgency)?.level ?? 2
     try {
-      const res = await fetch(`${api}/notifications/emergency`, {
+      const res = await apiFetch('/notifications/emergency', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bloodType, productType: component, message, urgencyLevel }),
       })
       const data = await res.json()
@@ -115,9 +111,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (tab !== 'historial') return
     setHistLoading(true)
-    fetch(`${api}/notifications?page=${histPage}&limit=${HIST_LIMIT}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    apiFetch(`/notifications?page=${histPage}&limit=${HIST_LIMIT}`)
       .then(r => r.json())
       .then(data => { setHistory(data.notifications || []); setHistTotal(data.total || 0) })
       .catch(() => {})

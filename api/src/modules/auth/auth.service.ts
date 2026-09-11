@@ -93,9 +93,10 @@ export class AuthService {
 
   // ── Token rotation ─────────────────────────────────────────────────────────
 
-  async refreshToken(refreshTokenStr: string) {
+  async refreshToken(refreshTokenStr: string | undefined) {
     let payload: any;
     try {
+      if (!refreshTokenStr) throw new Error('missing');
       payload = this.jwt.verify(refreshTokenStr, {
         secret: this.config.get('JWT_REFRESH_SECRET'),
       });
@@ -119,8 +120,9 @@ export class AuthService {
     return this.#signTokens(cleanPayload);
   }
 
-  async logout(refreshTokenStr: string): Promise<void> {
+  async logout(refreshTokenStr: string | undefined): Promise<void> {
     try {
+      if (!refreshTokenStr) return;
       const payload = this.jwt.verify(refreshTokenStr, {
         secret: this.config.get('JWT_REFRESH_SECRET'),
       });

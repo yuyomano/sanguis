@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Siren, Plus, MapPin } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface EmergencyRequest {
   id: string
@@ -59,10 +60,7 @@ export default function EmergencyRequestsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/emergency-requests')
       .then((r) => r.json())
       .then((data) => { setRequests(data.requests || []); setTotal(data.total || 0) })
       .catch(() => {})

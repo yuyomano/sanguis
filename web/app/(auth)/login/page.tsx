@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { setAccessToken } from '@/lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/admin/login`, {
         method: 'POST',
+        credentials: 'include', // recibe la cookie httpOnly con el refresh token
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
@@ -27,9 +29,8 @@ export default function LoginPage() {
         return
       }
 
-      const { accessToken, refreshToken } = await res.json()
-      localStorage.setItem('sanguis_token', accessToken)
-      localStorage.setItem('sanguis_refresh', refreshToken)
+      const { accessToken } = await res.json()
+      setAccessToken(accessToken) // solo en memoria — nunca en localStorage
       router.push('/dashboard')
     } catch {
       setError('Error de conexión')

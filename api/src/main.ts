@@ -2,11 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const isProd = process.env.NODE_ENV === 'production';
+
+  // Refresh token de admin viaja en cookie httpOnly (ver auth.controller.ts)
+  app.use(cookieParser());
 
   // ── Security headers ─────────────────────────────────────────────────────
   app.use(helmet({

@@ -6,6 +6,7 @@ import {
   User, Crown, Droplets, Gift, Phone, Mail, Calendar,
   CheckCircle, XCircle, ArrowLeft, Plus, MapPin, FlaskConical,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
@@ -47,14 +48,10 @@ export default function DonorProfilePage() {
   const [locationForm, setLocationForm] = useState({ city: '', address: '', latitude: '', longitude: '' })
   const [savingLocation, setSavingLocation] = useState(false)
 
-  const api = process.env.NEXT_PUBLIC_API_URL
-  const token = () => localStorage.getItem('sanguis_token')
-  const headers = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
-
   useEffect(() => {
     Promise.all([
-      fetch(`${api}/donors/${id}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
-      fetch(`${api}/donors/${id}/eligibility`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
+      apiFetch(`/donors/${id}`).then(r => r.json()),
+      apiFetch(`/donors/${id}/eligibility`).then(r => r.json()),
     ]).then(([d, e]) => {
       setDonor(d)
       setEligibility(e)
@@ -67,9 +64,9 @@ export default function DonorProfilePage() {
 
   async function setCategory(category: string) {
     setSaving(true)
-    await fetch(`${api}/donors/${id}/category`, {
+    await apiFetch(`/donors/${id}/category`, {
       method: 'PATCH',
-      headers: headers(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category }),
     })
     setDonor((d: any) => ({ ...d, category }))
@@ -79,9 +76,9 @@ export default function DonorProfilePage() {
   async function togglePriority() {
     setSaving(true)
     const isPriority = !donor.isPriorityDonor
-    await fetch(`${api}/donors/${id}/priority`, {
+    await apiFetch(`/donors/${id}/priority`, {
       method: 'PATCH',
-      headers: headers(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isPriority }),
     })
     setDonor((d: any) => ({ ...d, isPriorityDonor: isPriority }))
@@ -96,7 +93,11 @@ export default function DonorProfilePage() {
       latitude: locationForm.latitude ? parseFloat(locationForm.latitude) : null,
       longitude: locationForm.longitude ? parseFloat(locationForm.longitude) : null,
     }
-    const res = await fetch(`${api}/donors/${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify(body) })
+    const res = await apiFetch(`/donors/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
     if (res.ok) {
       setDonor((d: any) => ({ ...d, ...body }))
       setEditingLocation(false)

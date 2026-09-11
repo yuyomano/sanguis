@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Droplets, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface BloodUnit {
   id: string
@@ -85,16 +86,13 @@ export default function InventoryPage() {
   const LIMIT = 25
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
     if (status) params.set('status', status)
     if (productType) params.set('productType', productType)
     if (bloodType) params.set('bloodType', bloodType)
 
     setLoading(true)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/blood-units?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(`/blood-units?${params}`)
       .then((r) => r.json())
       .then((data) => { setUnits(data.units || []); setTotal(data.total || 0) })
       .catch(() => {})

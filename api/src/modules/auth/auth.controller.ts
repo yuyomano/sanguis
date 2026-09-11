@@ -1,12 +1,25 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Res, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { RegisterDonorDto } from './dto/register-donor.dto';
 import { LoginDonorDto } from './dto/login-donor.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+
+// El panel admin (web) no puede guardar el refresh token en localStorage (robable
+// por XSS) — viaja en cookie httpOnly y nunca toca el JS de la página. El donante
+// (app móvil) no tiene cookies de navegador: sigue recibiendo ambos tokens en el
+// body, como siempre, y los guarda en expo-secure-store.
+const REFRESH_COOKIE = 'sanguis_refresh';
+const REFRESH_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/auth',
+};
 
 @ApiTags('auth')
 @Controller('auth')
@@ -20,8 +33,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 300_000 } })
   @ApiOperation({ summary: 'Login de administrador (web panel)' })
-  loginAdmin(@Body() dto: LoginAdminDto) {
-    return this.authService.loginAdmin(dto);
+  async loginAdmin(@Body() dto: LoginAdminDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken, refreshToken } = await this.authService.loginAdmin(dto);
+    res.cookie(REFRESH_COOKIE, refreshToken, REFRESH_COOKIE_OPTS);
+    return { accessToken };
   }
 
   @Post('donor/register')
@@ -42,17 +57,25 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ auth: { limit: 10, ttl: 300_000 } })
-  @ApiOperation({ summary: 'Rotar access token usando refresh token' })
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto.refreshToken);
+  @ApiOperation({ summary: 'Rotar access token usando refresh token (cookie para admin, body para app móvil)' })
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() dto: RefreshTokenDto) {
+    const fromCookie = req.cookies?.[REFRESH_COOKIE];
+    const { accessToken, refreshToken } = await this.authService.refreshToken(fromCookie ?? dto.refreshToken);
+    if (fromCookie) {
+      res.cookie(REFRESH_COOKIE, refreshToken, REFRESH_COOKIE_OPTS);
+      return { accessToken };
+    }
+    return { accessToken, refreshToken };
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @SkipThrottle()
   @ApiOperation({ summary: 'Revocar refresh token (cierre de sesión)' })
-  async logout(@Body() dto: RefreshTokenDto) {
-    await this.authService.logout(dto.refreshToken);
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() dto: RefreshTokenDto) {
+    const fromCookie = req.cookies?.[REFRESH_COOKIE];
+    await this.authService.logout(fromCookie ?? dto.refreshToken);
+    if (fromCookie) res.clearCookie(REFRESH_COOKIE, REFRESH_COOKIE_OPTS);
   }
 
   @ApiBearerAuth()

@@ -6,6 +6,7 @@ import {
   ArrowLeft, MapPin, Phone, Mail, Download, Bell,
   CheckCircle, XCircle, RotateCcw, Navigation,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
@@ -64,12 +65,8 @@ export default function EmergencyRequestDetailPage() {
   const [notifying, setNotifying] = useState(false)
   const [notifyResult, setNotifyResult] = useState<string | null>(null)
 
-  const token = () => localStorage.getItem('sanguis_token')
-
   function loadRequest() {
-    return fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests/${id}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    return apiFetch(`/emergency-requests/${id}`)
       .then((r) => r.json())
       .then(setRequest)
   }
@@ -79,9 +76,7 @@ export default function EmergencyRequestDetailPage() {
     const params = new URLSearchParams()
     if (cityFilter) params.set('city', cityFilter)
     if (radiusFilter) params.set('maxDistanceKm', radiusFilter)
-    return fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests/${id}/candidates?${params}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    return apiFetch(`/emergency-requests/${id}/candidates?${params}`)
       .then((r) => r.json())
       .then((data) => setCandidates(data.candidates || []))
       .finally(() => setCandidatesLoading(false))
@@ -91,9 +86,9 @@ export default function EmergencyRequestDetailPage() {
   useEffect(() => { loadCandidates() }, [id, cityFilter, radiusFilter])
 
   async function changeStatus(status: string) {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests/${id}/status`, {
+    await apiFetch(`/emergency-requests/${id}/status`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
     loadRequest()
@@ -141,9 +136,9 @@ export default function EmergencyRequestDetailPage() {
     setConfirmNotify(false)
     setNotifyResult(null)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests/${id}/notify`, {
+      const res = await apiFetch(`/emergency-requests/${id}/notify`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ donorIds: Array.from(selected), channels: Array.from(channels) }),
       })
       const data = await res.json()

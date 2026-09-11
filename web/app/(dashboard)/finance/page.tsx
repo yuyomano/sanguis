@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
 import { fmtDOP } from '@/lib/fmt'
+import { apiFetch } from '@/lib/api'
 
 interface Summary {
   period: { start: string; end: string }
@@ -33,10 +34,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/summary`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/finance/summary')
       .then((r) => r.json())
       .then(setSummary)
       .catch(() => {})

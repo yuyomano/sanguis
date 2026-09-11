@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getAccessToken, hydrateSession, apiLogout } from '@/lib/api'
 import {
   LayoutDashboard,
   Users,
@@ -37,11 +38,23 @@ const nav = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  // El layout no se remonta al navegar entre secciones del dashboard, así que
+  // esto corre una sola vez por carga de la app — no en cada cambio de ruta
+  // (evita golpear /auth/refresh, que está limitado a 10 req/5min).
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) router.replace('/login')
-  }, [pathname])
+    if (getAccessToken()) {
+      setChecking(false)
+      return
+    }
+    hydrateSession().then((ok) => {
+      if (!ok) router.replace('/login')
+      setChecking(false)
+    })
+  }, [])
+
+  if (checking) return null
 
   return (
     <div className="flex h-screen bg-background">
@@ -77,8 +90,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logout */}
         <div className="px-3 py-4 border-t border-border">
           <button
-            onClick={() => {
-              localStorage.removeItem('sanguis_token')
+            onClick={async () => {
+              await apiLogout()
               window.location.href = '/login'
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-alert/5 hover:text-alert transition-colors w-full"

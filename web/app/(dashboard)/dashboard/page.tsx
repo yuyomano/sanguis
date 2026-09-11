@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Users, Droplets, AlertTriangle, TrendingUp, Activity } from 'lucide-react'
 import { fmtDOP } from '@/lib/fmt'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_TYPE_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-',
@@ -47,16 +48,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) { window.location.href = '/login'; return }
-    const headers = { Authorization: `Bearer ${token}` }
-    const api = process.env.NEXT_PUBLIC_API_URL
-
     Promise.all([
-      fetch(`${api}/donors/stats`, { headers }).then((r) => { if (r.status === 401) { window.location.href = '/login'; throw new Error('401') } return r.json() }),
-      fetch(`${api}/blood-units/inventory`, { headers }).then((r) => r.json()),
-      fetch(`${api}/finance/summary`, { headers }).then((r) => r.json()),
-      fetch(`${api}/events?page=1&limit=1`, { headers }).then((r) => r.json()),
+      apiFetch('/donors/stats').then((r) => r.json()),
+      apiFetch('/blood-units/inventory').then((r) => r.json()),
+      apiFetch('/finance/summary').then((r) => r.json()),
+      apiFetch('/events?page=1&limit=1').then((r) => r.json()),
     ])
       .then(([donors, inventory, finance, eventsData]) => {
         setStats({

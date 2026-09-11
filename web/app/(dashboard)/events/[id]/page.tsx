@@ -6,6 +6,7 @@ import {
   ArrowLeft, CalendarDays, MapPin, Users, Truck,
   CheckCircle, Clock, XCircle, Bell,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const STATUS_EVENT_STYLES: Record<string, string> = {
   SCHEDULED: 'bg-blood-50 text-primary',
@@ -40,12 +41,8 @@ export default function EventDetailPage() {
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null)
   const [confirmBroadcast, setConfirmBroadcast] = useState(false)
 
-  const token = () => localStorage.getItem('sanguis_token')
-
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${id}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    apiFetch(`/events/${id}`)
       .then(r => r.json())
       .then(setEvent)
       .finally(() => setLoading(false))
@@ -56,10 +53,7 @@ export default function EventDetailPage() {
     setConfirmBroadcast(false)
     setBroadcastResult(null)
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/notifications/events/${id}/broadcast`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token()}` } },
-      )
+      const res = await apiFetch(`/notifications/events/${id}/broadcast`, { method: 'POST' })
       const data = await res.json()
       setBroadcastResult(`Notificación enviada a ${data.notified ?? '—'} donantes`)
     } catch {

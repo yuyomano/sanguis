@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_TYPES = ['O_NEGATIVE', 'O_POSITIVE', 'A_NEGATIVE', 'A_POSITIVE', 'B_NEGATIVE', 'B_POSITIVE', 'AB_NEGATIVE', 'AB_POSITIVE']
 const BLOOD_LABELS: Record<string, string> = {
@@ -49,7 +50,6 @@ export default function NewEmergencyRequestPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const token = localStorage.getItem('sanguis_token')
 
     const body: Record<string, any> = {
       hospitalName: form.hospitalName,
@@ -68,9 +68,9 @@ export default function NewEmergencyRequestPage() {
     if (form.requesterPhone) body.requesterPhone = form.requesterPhone
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/emergency-requests`, {
+      const res = await apiFetch('/emergency-requests', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       if (!res.ok) {
