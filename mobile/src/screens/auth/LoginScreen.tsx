@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image,
 } from 'react-native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -35,10 +35,9 @@ export default function LoginScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Logo */}
         <View style={styles.logoWrap}>
-          <View style={styles.logoCircle}>
-            <MaterialIcons name="water-drop" size={44} color={Colors.white} />
+          <View style={styles.logoBadge}>
+            <Image source={require('../../../assets/images/logo.png')} style={styles.logoImg} resizeMode="contain" />
           </View>
-          <Text style={styles.logoTitle}>Sanguis</Text>
           <Text style={styles.logoSub}>Dona sangre, salva vidas</Text>
         </View>
 
@@ -96,12 +95,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.blood },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logoWrap: { alignItems: 'center', marginBottom: 32 },
-  logoCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center',
-    marginBottom: 12,
+  logoBadge: {
+    width: 116, height: 116, borderRadius: 24, padding: 14,
+    backgroundColor: Colors.white, justifyContent: 'center', alignItems: 'center',
+    marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12, elevation: 6,
   },
-  logoTitle: { fontSize: 32, fontWeight: 'bold', color: Colors.white },
+  logoImg: { width: '100%', height: '100%' },
   logoSub: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   card: { backgroundColor: Colors.white, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, elevation: 8 },
   cardTitle: { fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 20 },

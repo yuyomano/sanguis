@@ -48,15 +48,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
-          <svg width="26" height="26" viewBox="0 0 34 34" fill="none" aria-hidden="true" className="shrink-0">
-            <rect x="1" y="1" width="32" height="32" rx="6" stroke="#8E2436" strokeWidth="1.5" />
-            <path d="M17 8c3.5 4.8 6 8.1 6 11a6 6 0 1 1-12 0c0-2.9 2.5-6.2 6-11Z" fill="#8E2436" />
-          </svg>
-          <div>
-            <p className="font-display font-semibold text-foreground leading-none">Sanguis</p>
-            <p className="text-xs text-muted-foreground mt-1">Panel de administración</p>
-          </div>
+        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border">
+          <img src="/logo.png" alt="Sanguis" className="h-9 w-auto shrink-0" />
+          <p className="text-xs text-muted-foreground">Panel de administración</p>
         </div>
 
         {/* Navigation */}
