@@ -3,14 +3,22 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
+import { CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useAuthStore } from '../../store/authStore'
 import { useDonorStore } from '../../store/donorStore'
 import { Colors } from '../../theme/colors'
 import { BLOOD_LABELS } from '../../types'
-import { RootStackParamList } from '../../types'
+import { RootStackParamList, TabParamList } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
+// ponytail: HomeScreen vive dentro del Tab.Navigator (MainTabs), no del Stack —
+// su navigation prop es la del tab, compuesta con la del stack padre para poder
+// navegar a pantallas fuera de los tabs (BloodTracker, Notifications, etc.)
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
 const CATEGORY_COLORS = { CASUAL: Colors.textSecondary, RECURRENT: Colors.blood, VIP: Colors.plasma }

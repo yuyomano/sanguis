@@ -3,12 +3,18 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
+import { CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
-import { DonationEvent, RootStackParamList } from '../../types'
+import { DonationEvent, RootStackParamList, TabParamList } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
+// ponytail: ver nota en HomeScreen — mismo caso de pantalla de tab que navega al stack padre
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Events'>,
+  NativeStackScreenProps<RootStackParamList>
+>
 
 const STATUS_COLORS: Record<string, string> = {
   SCHEDULED: Colors.blood, ACTIVE: Colors.success, COMPLETED: Colors.textMuted, CANCELLED: Colors.error,

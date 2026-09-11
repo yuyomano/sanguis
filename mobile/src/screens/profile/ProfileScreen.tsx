@@ -2,13 +2,19 @@ import React, { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
+import { CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useAuthStore } from '../../store/authStore'
 import { useDonorStore } from '../../store/donorStore'
 import { Colors } from '../../theme/colors'
-import { BLOOD_LABELS, RootStackParamList } from '../../types'
+import { BLOOD_LABELS, RootStackParamList, TabParamList } from '../../types'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
+// ponytail: ver nota en HomeScreen — mismo caso de pantalla de tab que navega al stack padre
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Profile'>,
+  NativeStackScreenProps<RootStackParamList>
+>
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
 
