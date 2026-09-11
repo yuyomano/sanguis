@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Truck, MapPin, Package, DollarSign, CheckCircle, Clock, Circle } from 'lucide-react'
 
 interface CustodyEntry {
@@ -81,7 +81,8 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-export default function DeliveryDetailPage({ params }: { params: { id: string } }) {
+export default function DeliveryDetailPage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [order, setOrder] = useState<DeliveryDetail | null>(null)
   const [loading, setLoading] = useState(true)
