@@ -22,19 +22,27 @@ export class DonorsService {
     private encryption: EncryptionService,
   ) {}
 
-  // Descifra campos sensibles y quita passwordHash antes de devolver un donante
+  // Descifra campos sensibles y quita passwordHash / *Hash (índice ciego interno)
+  // antes de devolver un donante.
   private sanitize(donor: any): any {
     if (!donor) return donor;
-    const { passwordHash: _passwordHash, ...rest } = donor;
+    const { passwordHash: _passwordHash, idNumberHash: _idNumberHash, emailHash: _emailHash, phoneHash: _phoneHash, ...rest } = donor;
     return {
       ...rest,
+      idNumber: donor.idNumber ? this.encryption.decrypt(donor.idNumber) : donor.idNumber,
+      phone: donor.phone ? this.encryption.decrypt(donor.phone) : donor.phone,
+      email: donor.email ? this.encryption.decrypt(donor.email) : donor.email,
+      address: donor.address ? this.encryption.decrypt(donor.address) : donor.address,
+      latitude: donor.latitude != null ? parseFloat(this.encryption.decrypt(donor.latitude)) : donor.latitude,
+      longitude: donor.longitude != null ? parseFloat(this.encryption.decrypt(donor.longitude)) : donor.longitude,
       adminNotes: donor.adminNotes ? this.encryption.decrypt(donor.adminNotes) : donor.adminNotes,
       fcmToken: donor.fcmToken ? this.encryption.decrypt(donor.fcmToken) : donor.fcmToken,
     };
   }
 
   async create(dto: CreateDonorDto) {
-    const exists = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+    const idNumberHash = this.encryption.hash(dto.idNumber);
+    const exists = await this.prisma.donor.findUnique({ where: { idNumberHash } });
     if (exists) throw new ConflictException('Ya existe un donante con ese número de identificación');
 
     // ponytail: sin contraseña explícita, genera una temporal aleatoria en vez de
@@ -47,9 +55,12 @@ export class DonorsService {
       data: {
         name: dto.name,
         idType: dto.idType,
-        idNumber: dto.idNumber,
-        phone: dto.phone,
-        email: dto.email,
+        idNumber: this.encryption.encrypt(dto.idNumber),
+        idNumberHash,
+        phone: this.encryption.encrypt(dto.phone),
+        phoneHash: this.encryption.hash(dto.phone),
+        email: dto.email ? this.encryption.encrypt(dto.email) : null,
+        emailHash: dto.email ? this.encryption.hash(dto.email) : null,
         bloodType: dto.bloodType,
         rhFactor: dto.rhFactor,
         passwordHash,
@@ -74,10 +85,13 @@ export class DonorsService {
     const where: any = { isActive: true };
 
     if (search) {
+      // idNumber/phone están cifrados en reposo: la búsqueda por substring ya no
+      // es posible sobre ellos, degrada a coincidencia exacta vía índice ciego.
+      const searchHash = this.encryption.hash(search);
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { idNumber: { contains: search } },
-        { phone: { contains: search } },
+        { idNumberHash: searchHash },
+        { phoneHash: searchHash },
       ];
     }
     if (bloodType) where.bloodType = bloodType;
@@ -117,10 +131,21 @@ export class DonorsService {
 
   async update(id: string, dto: UpdateDonorDto) {
     await this.findOne(id);
-    const { adminNotes, fcmToken, ...rest } = dto;
+    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, ...rest } = dto;
     const data: Record<string, unknown> = { ...rest };
     if (adminNotes !== undefined) data.adminNotes = adminNotes ? this.encryption.encrypt(adminNotes) : null;
     if (fcmToken !== undefined) data.fcmToken = fcmToken ? this.encryption.encrypt(fcmToken) : null;
+    if (phone !== undefined) {
+      data.phone = this.encryption.encrypt(phone);
+      data.phoneHash = this.encryption.hash(phone);
+    }
+    if (email !== undefined) {
+      data.email = email ? this.encryption.encrypt(email) : null;
+      data.emailHash = email ? this.encryption.hash(email) : null;
+    }
+    if (address !== undefined) data.address = address ? this.encryption.encrypt(address) : null;
+    if (latitude !== undefined) data.latitude = latitude != null ? this.encryption.encrypt(String(latitude)) : null;
+    if (longitude !== undefined) data.longitude = longitude != null ? this.encryption.encrypt(String(longitude)) : null;
     const donor = await this.prisma.donor.update({ where: { id }, data });
     return this.sanitize(donor);
   }

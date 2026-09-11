@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import dayjs from 'dayjs';
 import { AdminRole, DonationReporter, ExternalDonationStatus, ProductType } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { DonorsService, ELIGIBILITY_DAYS } from '../donors/donors.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { CreateExternalDonationDto } from './dto/create-external-donation.dto';
@@ -17,6 +18,7 @@ export class ExternalDonationsService {
     private prisma: PrismaService,
     private donorsService: DonorsService,
     private rewardsService: RewardsService,
+    private encryption: EncryptionService,
   ) {}
 
   // ── Reporte del donante (pendiente de verificación) ─────────────────────────
@@ -49,7 +51,7 @@ export class ExternalDonationsService {
   async createInstitutionReport(institutionId: string, dto: ReportInstitutionDonationDto) {
     const [institution, donor] = await Promise.all([
       this.prisma.partnerInstitution.findUnique({ where: { id: institutionId } }),
-      this.prisma.donor.findUnique({ where: { idNumber: dto.donorIdNumber } }),
+      this.prisma.donor.findUnique({ where: { idNumberHash: this.encryption.hash(dto.donorIdNumber) } }),
     ]);
     if (!institution || !institution.isActive) throw new NotFoundException('Institución no encontrada');
     if (!donor) throw new NotFoundException('No hay un donante registrado en Sanguis con esa cédula/pasaporte');
@@ -131,7 +133,7 @@ export class ExternalDonationsService {
   // ── Admin: listado / revisión ────────────────────────────────────────────────
 
   async findAll(status?: ExternalDonationStatus) {
-    return this.prisma.externalDonation.findMany({
+    const donations = await this.prisma.externalDonation.findMany({
       where: status ? { status } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -139,13 +141,17 @@ export class ExternalDonationsService {
         institution: { select: { id: true, name: true } },
       },
     });
+    return donations.map((d) => ({
+      ...d,
+      donor: d.donor ? { ...d.donor, idNumber: d.donor.idNumber ? this.encryption.decrypt(d.donor.idNumber) : d.donor.idNumber } : d.donor,
+    }));
   }
 
   // ── Consulta de elegibilidad para instituciones (requiere consentimiento) ───
 
   async checkEligibilityByIdNumber(idNumber: string, productType: ProductType = ProductType.WHOLE_BLOOD) {
     if (!idNumber) throw new BadRequestException('idNumber es requerido');
-    const donor = await this.prisma.donor.findUnique({ where: { idNumber } });
+    const donor = await this.prisma.donor.findUnique({ where: { idNumberHash: this.encryption.hash(idNumber) } });
     if (!donor) throw new NotFoundException('Donante no encontrado');
     if (!donor.shareHistoryWithInstitutions) {
       throw new ForbiddenException('El donante no ha autorizado compartir su historial con instituciones externas');

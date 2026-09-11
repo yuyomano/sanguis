@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { RegisterDonorDto } from './dto/register-donor.dto';
 import { LoginDonorDto } from './dto/login-donor.dto';
@@ -14,6 +15,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private encryption: EncryptionService,
   ) {}
 
   // ── Admin ──────────────────────────────────────────────────────────────────
@@ -36,11 +38,11 @@ export class AuthService {
     }
 
     if (dto.idNumber) {
-      const byId = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+      const byId = await this.prisma.donor.findUnique({ where: { idNumberHash: this.encryption.hash(dto.idNumber) } });
       if (byId) throw new ConflictException('Ya existe un donante con ese número de identificación');
     }
     if (dto.email) {
-      const byEmail = await this.prisma.donor.findUnique({ where: { email: dto.email } });
+      const byEmail = await this.prisma.donor.findUnique({ where: { emailHash: this.encryption.hash(dto.email) } });
       if (byEmail) throw new ConflictException('Ya existe un donante con ese correo electrónico');
     }
 
@@ -49,16 +51,19 @@ export class AuthService {
       data: {
         name: dto.name,
         idType: dto.idType ?? null,
-        idNumber: dto.idNumber ?? null,
-        phone: dto.phone,
-        email: dto.email,
+        idNumber: dto.idNumber ? this.encryption.encrypt(dto.idNumber) : null,
+        idNumberHash: dto.idNumber ? this.encryption.hash(dto.idNumber) : null,
+        phone: this.encryption.encrypt(dto.phone),
+        phoneHash: this.encryption.hash(dto.phone),
+        email: dto.email ? this.encryption.encrypt(dto.email) : null,
+        emailHash: dto.email ? this.encryption.hash(dto.email) : null,
         bloodType: dto.bloodType,
         rhFactor: dto.rhFactor,
         passwordHash,
         city: dto.city ?? null,
-        address: dto.address ?? null,
-        latitude: dto.latitude ?? null,
-        longitude: dto.longitude ?? null,
+        address: dto.address ? this.encryption.encrypt(dto.address) : null,
+        latitude: dto.latitude != null ? this.encryption.encrypt(String(dto.latitude)) : null,
+        longitude: dto.longitude != null ? this.encryption.encrypt(String(dto.longitude)) : null,
         availableTimes: dto.availableTimes,
         referredById: dto.referralCode
           ? (await this.prisma.donor.findFirst({ where: { referralCode: dto.referralCode } }))?.id
@@ -66,7 +71,7 @@ export class AuthService {
       },
     });
 
-    return this.#signTokens({ sub: donor.id, phone: donor.phone, type: 'donor' });
+    return this.#signTokens({ sub: donor.id, phone: dto.phone, type: 'donor' });
   }
 
   async loginDonor(dto: LoginDonorDto) {
@@ -75,15 +80,15 @@ export class AuthService {
     }
 
     const donor = dto.email
-      ? await this.prisma.donor.findUnique({ where: { email: dto.email } })
-      : await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+      ? await this.prisma.donor.findUnique({ where: { emailHash: this.encryption.hash(dto.email) } })
+      : await this.prisma.donor.findUnique({ where: { idNumberHash: this.encryption.hash(dto.idNumber!) } });
 
     if (!donor || !donor.isActive) throw new UnauthorizedException('Credenciales inválidas');
 
     const valid = await bcrypt.compare(dto.password, donor.passwordHash);
     if (!valid) throw new UnauthorizedException('Credenciales inválidas');
 
-    return this.#signTokens({ sub: donor.id, phone: donor.phone, type: 'donor' });
+    return this.#signTokens({ sub: donor.id, phone: this.encryption.decrypt(donor.phone), type: 'donor' });
   }
 
   // ── Token rotation ─────────────────────────────────────────────────────────

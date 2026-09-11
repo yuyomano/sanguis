@@ -23,10 +23,15 @@ export class NotificationsService {
     const event = await this.prisma.donationEvent.findUnique({ where: { id: eventId } });
     if (!event) return;
 
-    const donors = await this.prisma.donor.findMany({
+    const rawDonors = await this.prisma.donor.findMany({
       where: { isActive: true },
       select: { id: true, name: true, phone: true, email: true, referralCode: true, fcmToken: true },
     });
+    const donors = rawDonors.map((d) => ({
+      ...d,
+      phone: this.encryption.decrypt(d.phone),
+      email: d.email ? this.encryption.decrypt(d.email) : d.email,
+    }));
 
     const results = { sent: 0, failed: 0 };
     const formattedDate = dayjs(event.startDatetime).format('DD/MM/YYYY [a las] HH:mm');

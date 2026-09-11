@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { PointTransactionType, ProductType } from '@prisma/client';
 
 // Base points per product type
@@ -19,7 +20,10 @@ const EXTERNAL_DONATION_POINTS = 50;
 
 @Injectable()
 export class RewardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
 
   async awardDonationPoints(donorId: string, donationId: string, productType: ProductType) {
     const donor = await this.prisma.donor.findUnique({ where: { id: donorId } });
@@ -211,7 +215,15 @@ export class RewardsService {
       }),
       this.prisma.redemption.count(),
     ]);
-    return { redemptions, total, page, limit };
+    return {
+      redemptions: redemptions.map((r) => ({
+        ...r,
+        donor: r.donor ? { ...r.donor, idNumber: r.donor.idNumber ? this.encryption.decrypt(r.donor.idNumber) : r.donor.idNumber } : r.donor,
+      })),
+      total,
+      page,
+      limit,
+    };
   }
 
   async getDonorTransactions(donorId: string) {

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { BloodType, BloodUnitStatus, ProductType } from '@prisma/client';
 import { CreateBloodUnitDto } from './dto/create-blood-unit.dto';
 import dayjs from 'dayjs';
@@ -28,7 +29,10 @@ const VALID_TRANSITIONS: Partial<Record<BloodUnitStatus, BloodUnitStatus[]>> = {
 
 @Injectable()
 export class BloodUnitsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
 
   async getStorageLocations() {
     return this.prisma.storageLocation.findMany({
@@ -136,6 +140,13 @@ export class BloodUnitsService {
       },
     });
     if (!unit) throw new NotFoundException('Unidad de sangre no encontrada');
+    if (unit.donor) {
+      unit.donor = {
+        ...unit.donor,
+        idNumber: unit.donor.idNumber ? this.encryption.decrypt(unit.donor.idNumber) : unit.donor.idNumber,
+        phone: unit.donor.phone ? this.encryption.decrypt(unit.donor.phone) : unit.donor.phone,
+      };
+    }
     return unit;
   }
 

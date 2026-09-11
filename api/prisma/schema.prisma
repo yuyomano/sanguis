@@ -191,9 +191,12 @@ model Donor {
   id                           String        @id @default(uuid())
   name                         String
   idType                       IdType?
-  idNumber                     String?       @unique
-  phone                        String
-  email                        String?       @unique
+  idNumber                     String?       // cifrado en reposo; unicidad vía idNumberHash
+  idNumberHash                 String?       @unique
+  phone                        String        // cifrado en reposo
+  phoneHash                    String?
+  email                        String?       // cifrado en reposo; unicidad vía emailHash
+  emailHash                    String?       @unique
   bloodType                    BloodType
   rhFactor                     Boolean
   reactiveStatus               Json?
@@ -210,9 +213,9 @@ model Donor {
   fcmToken                     String?
   isActive                     Boolean       @default(true)
   city                         String?
-  address                      String?
-  latitude                     Float?
-  longitude                    Float?
+  address                      String?       // cifrado en reposo
+  latitude                     String?       // cifrado en reposo (era Float)
+  longitude                    String?       // cifrado en reposo (era Float)
   // Consentimiento para que instituciones externas (hospitales/otros bancos) consulten su elegibilidad/historial
   shareHistoryWithInstitutions Boolean       @default(false)
   createdAt                    DateTime      @default(now())

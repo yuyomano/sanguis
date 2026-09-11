@@ -111,13 +111,21 @@ export class EmergencyRequestsService {
     const compatibleTypes = getCompatibleDonorTypes(request.bloodType, request.productType);
     const requiredDays = ELIGIBILITY_DAYS[request.productType];
 
-    const donors = await this.prisma.donor.findMany({
+    const rawDonors = await this.prisma.donor.findMany({
       where: { bloodType: { in: compatibleTypes }, isActive: true },
       select: {
         id: true, name: true, phone: true, email: true, bloodType: true, category: true,
         city: true, address: true, latitude: true, longitude: true, lastDonationDate: true,
       },
     });
+    const donors = rawDonors.map((d) => ({
+      ...d,
+      phone: this.encryption.decrypt(d.phone),
+      email: d.email ? this.encryption.decrypt(d.email) : d.email,
+      address: d.address ? this.encryption.decrypt(d.address) : d.address,
+      latitude: (d.latitude != null ? parseFloat(this.encryption.decrypt(d.latitude)) : null) as number | null,
+      longitude: (d.longitude != null ? parseFloat(this.encryption.decrypt(d.longitude)) : null) as number | null,
+    }));
 
     const cityFilter = city?.trim().toLowerCase();
     const hasRequestCoords = request.latitude != null && request.longitude != null;
@@ -144,10 +152,15 @@ export class EmergencyRequestsService {
 
   async notify(id: string, dto: NotifyCandidatesDto) {
     const request = await this.findOne(id);
-    const donors = await this.prisma.donor.findMany({
+    const rawDonors = await this.prisma.donor.findMany({
       where: { id: { in: dto.donorIds } },
       select: { id: true, name: true, phone: true, email: true, fcmToken: true },
     });
+    const donors = rawDonors.map((d) => ({
+      ...d,
+      phone: this.encryption.decrypt(d.phone),
+      email: d.email ? this.encryption.decrypt(d.email) : d.email,
+    }));
 
     const title = request.urgencyLevel >= 3 ? '🚨 ALERTA CRÍTICA — Sanguis' : request.urgencyLevel === 2 ? '⚠️ Alerta urgente — Sanguis' : '🔔 Convocatoria — Sanguis';
     const bodyText = `Se necesitan ${request.unitsNeeded} unidad(es) de ${PRODUCT_LABELS[request.productType]} tipo ${BLOOD_LABELS[request.bloodType]} en ${request.hospitalName}, ${request.city}.${request.notes ? ` ${request.notes}` : ''} Tu tipo de sangre es compatible. ¿Puedes donar hoy?`;

@@ -54,6 +54,17 @@ export class EncryptionService {
     }
   }
 
+  // Índice ciego: HMAC-SHA256 determinístico para permitir búsquedas exactas
+  // (findUnique, chequeo de duplicados) sobre columnas cifradas en reposo.
+  // ponytail: determinístico == vulnerable a diccionario/enumeración en valores
+  // de baja entropía (teléfono, cédula). Suficiente para bloquear lectura directa
+  // de un dump de BD; si hace falta resistir fuerza bruta dirigida, pasar a un
+  // esquema con pepper por-registro o a búsqueda ciega con OPRF.
+  hash(value: string): string {
+    if (!this.enabled || !this.key) return value;
+    return crypto.createHmac('sha256', this.key).update(value).digest('hex');
+  }
+
   encryptJson(obj: unknown): string {
     return this.encrypt(JSON.stringify(obj));
   }
