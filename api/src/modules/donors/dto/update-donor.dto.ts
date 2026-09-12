@@ -1,11 +1,22 @@
-import { IsString, IsEmail, IsOptional, IsObject, IsBoolean, IsNumber } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsObject, IsBoolean, IsNumber, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IdType } from '@prisma/client';
 
 export class UpdateDonorDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiPropertyOptional({ enum: IdType, description: 'Requerido junto con idNumber' })
+  @IsEnum(IdType)
+  @IsOptional()
+  idType?: IdType;
+
+  @ApiPropertyOptional({ description: 'Cédula/DNI/pasaporte. Requerido junto con idType' })
+  @IsString()
+  @IsOptional()
+  idNumber?: string;
 
   @ApiPropertyOptional()
   @IsString()

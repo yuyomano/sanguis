@@ -7,6 +7,7 @@ interface DonorState {
   isLoading: boolean
   fetchProfile: () => Promise<void>
   updateLocation: (data: { city?: string; address?: string; latitude?: number; longitude?: number }) => Promise<void>
+  updateIdNumber: (data: { idType: 'CEDULA' | 'PASSPORT'; idNumber: string }) => Promise<void>
   clearProfile: () => void
 }
 
@@ -28,6 +29,11 @@ export const useDonorStore = create<DonorState>((set) => ({
 
   updateLocation: async (data) => {
     const { data: updated } = await api.patch('/donors/me/location', data)
+    set({ profile: updated })
+  },
+
+  updateIdNumber: async (data) => {
+    const { data: updated } = await api.patch('/donors/me/id-number', data)
     set({ profile: updated })
   },
 

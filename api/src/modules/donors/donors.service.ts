@@ -131,8 +131,17 @@ export class DonorsService {
 
   async update(id: string, dto: UpdateDonorDto) {
     await this.findOne(id);
-    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, ...rest } = dto;
+    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, idNumber, ...rest } = dto;
     const data: Record<string, unknown> = { ...rest };
+    if (idNumber !== undefined) {
+      const idNumberHash = this.encryption.hash(idNumber);
+      const exists = await this.prisma.donor.findUnique({ where: { idNumberHash } });
+      if (exists && exists.id !== id) {
+        throw new ConflictException('Ya existe un donante con ese número de identificación');
+      }
+      data.idNumber = this.encryption.encrypt(idNumber);
+      data.idNumberHash = idNumberHash;
+    }
     if (adminNotes !== undefined) data.adminNotes = adminNotes ? this.encryption.encrypt(adminNotes) : null;
     if (fcmToken !== undefined) data.fcmToken = fcmToken ? this.encryption.encrypt(fcmToken) : null;
     if (phone !== undefined) {

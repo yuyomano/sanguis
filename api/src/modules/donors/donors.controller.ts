@@ -5,6 +5,7 @@ import { DonorsService } from './donors.service';
 import { CreateDonorDto } from './dto/create-donor.dto';
 import { UpdateDonorDto } from './dto/update-donor.dto';
 import { UpdateDonorLocationDto } from './dto/update-donor-location.dto';
+import { UpdateIdNumberDto } from './dto/update-id-number.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DonorJwtAuthGuard } from '../../common/guards/donor-jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -92,6 +93,14 @@ export class DonorsController {
   @ApiOperation({ summary: 'Activar/desactivar notificaciones no críticas (broadcast de eventos) del donante autenticado. Las alertas de emergencia siempre se envían.' })
   updateNotificationPreference(@Request() req: any, @Body('notificationsEnabled') notificationsEnabled: boolean) {
     return this.donorsService.update(req.user.id, { notificationsEnabled });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(DonorJwtAuthGuard)
+  @Patch('me/id-number')
+  @ApiOperation({ summary: 'Corregir/completar cédula, DNI o pasaporte del donante autenticado (app móvil). Necesario para ganar y canjear puntos.' })
+  updateMyIdNumber(@Request() req: any, @Body() dto: UpdateIdNumberDto) {
+    return this.donorsService.update(req.user.id, dto);
   }
 
   @ApiBearerAuth()

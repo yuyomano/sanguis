@@ -21,7 +21,8 @@ export interface Donor {
   name: string
   email: string
   phone: string
-  idNumber: string
+  idType: 'CEDULA' | 'PASSPORT' | null
+  idNumber: string | null
   bloodType: BloodType
   pointsBalance: number
   category: 'CASUAL' | 'RECURRENT' | 'VIP'

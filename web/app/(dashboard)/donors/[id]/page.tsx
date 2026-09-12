@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   User, Crown, Droplets, Gift, Phone, Mail, Calendar,
   CheckCircle, XCircle, ArrowLeft, Plus, MapPin, FlaskConical,
+  ShieldCheck, ShieldAlert,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 
@@ -32,6 +33,9 @@ const STATUS_LABELS: Record<string, string> = {
   ALLOCATED: 'Asignada', REJECTED: 'Rechazada', USED: 'Usada',
   DISCARDED: 'Descartada', TESTING: 'En análisis', COLLECTED: 'Recolectada',
 }
+const ID_TYPE_LABELS: Record<string, string> = {
+  CEDULA: 'Cédula', PASSPORT: 'Pasaporte',
+}
 const APPT_STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Pendiente', CHECKED_IN: 'Presente', CANCELLED: 'Cancelada',
   NO_SHOW: 'No se presentó', COMPLETED: 'Completada',
@@ -47,6 +51,10 @@ export default function DonorProfilePage() {
   const [editingLocation, setEditingLocation] = useState(false)
   const [locationForm, setLocationForm] = useState({ city: '', address: '', latitude: '', longitude: '' })
   const [savingLocation, setSavingLocation] = useState(false)
+  const [editingId, setEditingId] = useState(false)
+  const [idForm, setIdForm] = useState({ idType: 'CEDULA', idNumber: '' })
+  const [savingId, setSavingId] = useState(false)
+  const [idError, setIdError] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -59,6 +67,7 @@ export default function DonorProfilePage() {
         city: d.city || '', address: d.address || '',
         latitude: d.latitude?.toString() || '', longitude: d.longitude?.toString() || '',
       })
+      setIdForm({ idType: d.idType || 'CEDULA', idNumber: d.idNumber || '' })
     }).finally(() => setLoading(false))
   }, [id])
 
@@ -105,6 +114,24 @@ export default function DonorProfilePage() {
     setSavingLocation(false)
   }
 
+  async function saveId() {
+    setSavingId(true)
+    setIdError('')
+    const res = await apiFetch(`/donors/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idType: idForm.idType, idNumber: idForm.idNumber }),
+    })
+    if (res.ok) {
+      setDonor((d: any) => ({ ...d, idType: idForm.idType, idNumber: idForm.idNumber }))
+      setEditingId(false)
+    } else {
+      const body = await res.json().catch(() => null)
+      setIdError(body?.message || 'No se pudo guardar')
+    }
+    setSavingId(false)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -142,7 +169,55 @@ export default function DonorProfilePage() {
                 <h1 className="font-display text-xl font-semibold text-foreground">{donor.name}</h1>
                 {donor.isPriorityDonor && <Crown size={18} className="text-plasma" />}
               </div>
-              <p className="text-sm text-muted-foreground">{donor.idType} · {donor.idNumber}</p>
+              {editingId ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <select
+                    value={idForm.idType}
+                    onChange={(e) => setIdForm((f) => ({ ...f, idType: e.target.value }))}
+                    className="px-2 py-1 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="CEDULA">Cédula</option>
+                    <option value="PASSPORT">Pasaporte</option>
+                  </select>
+                  <input
+                    value={idForm.idNumber}
+                    onChange={(e) => setIdForm((f) => ({ ...f, idNumber: e.target.value }))}
+                    placeholder="Número de identificación"
+                    className="px-2 py-1 border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={saveId}
+                    disabled={savingId || !idForm.idNumber}
+                    className="px-2.5 py-1 bg-primary hover:bg-blood-600 text-white rounded-md text-xs font-medium transition-colors disabled:opacity-60"
+                  >
+                    {savingId ? 'Guardando…' : 'Verificar'}
+                  </button>
+                  <button
+                    onClick={() => { setEditingId(false); setIdError('') }}
+                    className="px-2.5 py-1 border border-input rounded-md text-xs text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  {idError && <p className="text-xs text-alert basis-full">{idError}</p>}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingId(true)}
+                  className="flex items-center gap-1.5 text-sm mt-0.5 hover:underline"
+                >
+                  {donor.idNumber ? (
+                    <>
+                      <ShieldCheck size={14} className="text-clinical-success shrink-0" />
+                      <span className="text-muted-foreground">{ID_TYPE_LABELS[donor.idType] || donor.idType} · {donor.idNumber}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldAlert size={14} className="text-alert shrink-0" />
+                      <span className="text-alert">Sin verificar — no gana puntos de recompensa</span>
+                    </>
+                  )}
+                </button>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-sm font-bold">
                   {BLOOD_LABELS[donor.bloodType]}

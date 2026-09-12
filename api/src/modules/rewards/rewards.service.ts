@@ -25,9 +25,18 @@ export class RewardsService {
     private encryption: EncryptionService,
   ) {}
 
+  // Sin cédula/DNI/pasaporte no hay forma de verificar la identidad del donante
+  // al momento del canje en el establecimiento aliado, así que no acumula puntos.
+  private hasVerifiedId(donor: { idNumber: string | null }): boolean {
+    return !!donor.idNumber;
+  }
+
   async awardDonationPoints(donorId: string, donationId: string, productType: ProductType) {
     const donor = await this.prisma.donor.findUnique({ where: { id: donorId } });
     if (!donor) throw new NotFoundException('Donante no encontrado');
+    if (!this.hasVerifiedId(donor)) {
+      return { pointsAwarded: 0, newBalance: donor.pointsBalance };
+    }
 
     const basePoints = DONATION_POINTS[productType];
 
@@ -89,6 +98,9 @@ export class RewardsService {
   async awardExternalDonationPoints(donorId: string, externalDonationId: string) {
     const donor = await this.prisma.donor.findUnique({ where: { id: donorId } });
     if (!donor) throw new NotFoundException('Donante no encontrado');
+    if (!this.hasVerifiedId(donor)) {
+      return { pointsAwarded: 0, newBalance: donor.pointsBalance };
+    }
 
     const newBalance = donor.pointsBalance + EXTERNAL_DONATION_POINTS;
     await this.prisma.$transaction([
@@ -114,6 +126,7 @@ export class RewardsService {
   async awardReferralPoints(referrerId: string, newDonorId: string) {
     const referrer = await this.prisma.donor.findUnique({ where: { id: referrerId } });
     if (!referrer) return;
+    if (!this.hasVerifiedId(referrer)) return;
 
     const newBalance = referrer.pointsBalance + 50;
     await this.prisma.$transaction([
@@ -141,6 +154,9 @@ export class RewardsService {
     ]);
 
     if (!donor) throw new NotFoundException('Donante no encontrado');
+    if (!this.hasVerifiedId(donor)) {
+      throw new BadRequestException('Debes verificar tu identidad (cédula, DNI o pasaporte) para canjear puntos');
+    }
     if (!partner || !partner.isActive) throw new NotFoundException('Establecimiento no disponible');
     if (donor.pointsBalance < pointsToRedeem) {
       throw new BadRequestException('Puntos insuficientes');

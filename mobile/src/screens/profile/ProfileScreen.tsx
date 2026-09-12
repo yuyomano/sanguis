@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { useNavigation } from '@react-navigation/native'
@@ -9,12 +9,31 @@ import { Colors } from '../../theme/colors'
 import { BLOOD_LABELS } from '../../types'
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
+const ID_TYPE_LABELS = { CEDULA: 'Cédula', PASSPORT: 'Pasaporte' }
 
 export default function ProfileScreen() {
   const navigation = useNavigation()
   const { logout } = useAuthStore()
-  const { profile, updateLocation } = useDonorStore()
+  const { profile, updateLocation, updateIdNumber } = useDonorStore()
   const [updatingLocation, setUpdatingLocation] = useState(false)
+  const [editingId, setEditingId] = useState(false)
+  const [idTypeInput, setIdTypeInput] = useState<'CEDULA' | 'PASSPORT'>('CEDULA')
+  const [idNumberInput, setIdNumberInput] = useState('')
+  const [savingId, setSavingId] = useState(false)
+
+  async function handleSaveId() {
+    if (!idNumberInput.trim()) return
+    setSavingId(true)
+    try {
+      await updateIdNumber({ idType: idTypeInput, idNumber: idNumberInput.trim() })
+      setEditingId(false)
+      setIdNumberInput('')
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message || 'No se pudo guardar tu identificación')
+    } finally {
+      setSavingId(false)
+    }
+  }
 
   function handleLogout() {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
@@ -78,7 +97,6 @@ export default function ProfileScreen() {
         {[
           { label: 'Correo', value: profile?.email },
           { label: 'Teléfono', value: profile?.phone },
-          { label: 'Cédula', value: profile?.idNumber },
           { label: 'Puntos', value: profile?.pointsBalance?.toLocaleString() ?? '0' },
           { label: 'Ciudad', value: profile?.city },
         ].map(({ label, value }) => (
@@ -87,6 +105,52 @@ export default function ProfileScreen() {
             <Text style={styles.infoValue}>{value ?? '—'}</Text>
           </View>
         ))}
+
+        {editingId ? (
+          <View style={styles.idEditRow}>
+            <View style={styles.idTypeToggle}>
+              {(['CEDULA', 'PASSPORT'] as const).map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.idTypeChip, idTypeInput === t && styles.idTypeChipActive]}
+                  onPress={() => setIdTypeInput(t)}
+                >
+                  <Text style={[styles.idTypeChipText, idTypeInput === t && styles.idTypeChipTextActive]}>
+                    {ID_TYPE_LABELS[t]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={styles.idInput}
+              value={idNumberInput}
+              onChangeText={setIdNumberInput}
+              placeholder="Número de identificación"
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+            />
+            <View style={styles.idEditActions}>
+              <TouchableOpacity onPress={() => setEditingId(false)} style={styles.idCancelBtn}>
+                <Text style={styles.idCancelBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSaveId} style={styles.idSaveBtn} disabled={savingId}>
+                {savingId
+                  ? <ActivityIndicator color={Colors.white} size="small" />
+                  : <Text style={styles.idSaveBtnText}>Guardar</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.infoRow} onPress={() => setEditingId(true)}>
+            <Text style={styles.infoLabel}>{profile?.idNumber ? (ID_TYPE_LABELS[profile.idType!] ?? 'Identificación') : 'Identificación'}</Text>
+            {profile?.idNumber ? (
+              <Text style={styles.infoValue}>{profile.idNumber}</Text>
+            ) : (
+              <Text style={[styles.infoValue, styles.idMissing]}>Agregar (necesaria para ganar puntos)</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.locationBtn} onPress={handleUpdateLocation} disabled={updatingLocation}>
           {updatingLocation
             ? <ActivityIndicator color={Colors.blood} size="small" />
@@ -146,6 +210,22 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
   infoLabel: { fontSize: 14, color: Colors.textSecondary },
   infoValue: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  idMissing: { color: Colors.blood, fontWeight: '700' },
+  idEditRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10 },
+  idTypeToggle: { flexDirection: 'row', gap: 8 },
+  idTypeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: Colors.bloodLight },
+  idTypeChipActive: { backgroundColor: Colors.blood },
+  idTypeChipText: { fontSize: 13, fontWeight: '600', color: Colors.blood },
+  idTypeChipTextActive: { color: Colors.white },
+  idInput: {
+    borderWidth: 1, borderColor: Colors.border, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Colors.text,
+  },
+  idEditActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
+  idCancelBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  idCancelBtnText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  idSaveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.blood, minWidth: 72, alignItems: 'center' },
+  idSaveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
   locationBtn: { paddingVertical: 12, alignItems: 'center' },
   locationBtnText: { fontSize: 14, fontWeight: '600', color: Colors.blood },
   menu: {
