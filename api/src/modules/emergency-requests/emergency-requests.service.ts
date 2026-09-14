@@ -65,6 +65,10 @@ const CATEGORY_RANK: Record<string, number> = { VIP: 0, RECURRENT: 1, CASUAL: 2 
 // Radio de búsqueda sugerido (km). Rh-: triplicar el radio de búsqueda.
 const DEFAULT_RADIUS_KM = 50;
 
+// notificaciones = donantes_requeridos / tasa_conversión. Se usa el extremo
+// conservador del rango (10%) para no quedarse corto de donantes.
+const CONVERSION_RATE = 0.1;
+
 @Injectable()
 export class EmergencyRequestsService {
   constructor(
@@ -151,8 +155,9 @@ export class EmergencyRequestsService {
       });
 
     const defaultRadiusKm = request.bloodType.endsWith('_NEGATIVE') ? DEFAULT_RADIUS_KM * 3 : DEFAULT_RADIUS_KM;
+    const suggestedNotifications = Math.ceil(request.unitsNeeded / CONVERSION_RATE);
 
-    return { compatibleTypes, requiredDays, candidates, defaultRadiusKm };
+    return { compatibleTypes, requiredDays, candidates, defaultRadiusKm, suggestedNotifications };
   }
 
   async notify(id: string, dto: NotifyCandidatesDto) {

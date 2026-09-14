@@ -60,6 +60,7 @@ export default function EmergencyRequestDetailPage() {
   const [cityFilter, setCityFilter] = useState('')
   const [radiusFilter, setRadiusFilter] = useState('')
   const [defaultRadiusKm, setDefaultRadiusKm] = useState<number | null>(null)
+  const [suggestedNotifications, setSuggestedNotifications] = useState<number | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const autoSelectedRef = useRef(false)
 
@@ -95,10 +96,13 @@ export default function EmergencyRequestDetailPage() {
         const list: Candidate[] = data.candidates || []
         setCandidates(list)
         if (data.defaultRadiusKm != null) setDefaultRadiusKm(data.defaultRadiusKm)
-        // Preselecciona los 50 candidatos más cercanos/prioritarios al cargar, una sola vez.
+        if (data.suggestedNotifications != null) setSuggestedNotifications(data.suggestedNotifications)
+        // Preselecciona los candidatos más cercanos/prioritarios al cargar (según
+        // donantes_requeridos / tasa_conversión, tope 50), una sola vez.
         if (!autoSelectedRef.current) {
           autoSelectedRef.current = true
-          setSelected(new Set(list.slice(0, 50).map((c) => c.id)))
+          const count = Math.min(data.suggestedNotifications ?? 50, 50)
+          setSelected(new Set(list.slice(0, count).map((c) => c.id)))
         }
       })
       .catch(() => { if (seq === candidatesSeq.current) setCandidatesError('Error de red.') })
@@ -254,7 +258,14 @@ export default function EmergencyRequestDetailPage() {
       {/* Candidates */}
       <div className="bg-card rounded-md border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-foreground">Candidatos ({candidates.length})</h2>
+          <div>
+            <h2 className="font-semibold text-foreground">Candidatos ({candidates.length})</h2>
+            {suggestedNotifications != null && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Recomendado: notificar a ~{suggestedNotifications} donantes (10% de conversión estimada)
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <input
               value={cityFilter}
