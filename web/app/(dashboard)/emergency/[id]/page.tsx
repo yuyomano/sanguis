@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, MapPin, Phone, Mail, Download, Bell,
@@ -56,6 +56,7 @@ export default function EmergencyRequestDetailPage() {
 
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [candidatesLoading, setCandidatesLoading] = useState(true)
+  const [candidatesError, setCandidatesError] = useState<string | null>(null)
   const [cityFilter, setCityFilter] = useState('')
   const [radiusFilter, setRadiusFilter] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -63,7 +64,7 @@ export default function EmergencyRequestDetailPage() {
   const [channels, setChannels] = useState<Set<string>>(new Set(['WHATSAPP']))
   const [confirmNotify, setConfirmNotify] = useState(false)
   const [notifying, setNotifying] = useState(false)
-  const [notifyResult, setNotifyResult] = useState<string | null>(null)
+  const [notifyResult, setNotifyResult] = useState<{ message: string; ok: boolean } | null>(null)
 
   function loadRequest() {
     return apiFetch(`/emergency-requests/${id}`)
@@ -71,15 +72,28 @@ export default function EmergencyRequestDetailPage() {
       .then(setRequest)
   }
 
+  const candidatesSeq = useRef(0)
+
   function loadCandidates() {
     setCandidatesLoading(true)
     const params = new URLSearchParams()
     if (cityFilter) params.set('city', cityFilter)
     if (radiusFilter) params.set('maxDistanceKm', radiusFilter)
+    const seq = ++candidatesSeq.current
     return apiFetch(`/emergency-requests/${id}/candidates?${params}`)
-      .then((r) => r.json())
-      .then((data) => setCandidates(data.candidates || []))
-      .finally(() => setCandidatesLoading(false))
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}))
+        if (seq !== candidatesSeq.current) return
+        if (!r.ok) {
+          setCandidatesError(data.message || 'Error al buscar candidatos')
+          setCandidates([])
+          return
+        }
+        setCandidatesError(null)
+        setCandidates(data.candidates || [])
+      })
+      .catch(() => { if (seq === candidatesSeq.current) setCandidatesError('Error de red.') })
+      .finally(() => { if (seq === candidatesSeq.current) setCandidatesLoading(false) })
   }
 
   useEffect(() => { loadRequest().finally(() => setLoading(false)) }, [id])
@@ -142,10 +156,12 @@ export default function EmergencyRequestDetailPage() {
         body: JSON.stringify({ donorIds: Array.from(selected), channels: Array.from(channels) }),
       })
       const data = await res.json()
-      setNotifyResult(`Enviado a ${data.sent ?? 0} de ${(data.sent ?? 0) + (data.failed ?? 0)} intentos`)
+      const sent = data.sent ?? 0
+      const total = sent + (data.failed ?? 0)
+      setNotifyResult({ message: `Enviado a ${sent} de ${total} intentos`, ok: sent > 0 })
       loadRequest()
     } catch {
-      setNotifyResult('Error al enviar notificaciones')
+      setNotifyResult({ message: 'Error al enviar notificaciones', ok: false })
     } finally {
       setNotifying(false)
     }
@@ -259,6 +275,11 @@ export default function EmergencyRequestDetailPage() {
 
         {candidatesLoading ? (
           <div className="py-16 text-center text-muted-foreground text-sm">Buscando candidatos…</div>
+        ) : candidatesError ? (
+          <div className="py-16 text-center">
+            <p className="text-alert text-sm font-medium">{candidatesError}</p>
+            <button onClick={() => loadCandidates()} className="text-xs text-primary hover:underline mt-1">Reintentar</button>
+          </div>
         ) : candidates.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground/70">
             <p className="text-sm">Sin donantes compatibles y elegibles con estos filtros</p>
@@ -347,8 +368,12 @@ export default function EmergencyRequestDetailPage() {
         )}
 
         {notifyResult && (
-          <div className="mx-5 mb-4 bg-clinical-success/5 border border-clinical-success/30 text-clinical-success text-sm px-4 py-2 rounded-md">
-            {notifyResult}
+          <div className={`mx-5 mb-4 text-sm px-4 py-2 rounded-md border ${
+            notifyResult.ok
+              ? 'bg-clinical-success/5 border-clinical-success/30 text-clinical-success'
+              : 'bg-alert/5 border-alert/30 text-alert'
+          }`}>
+            {notifyResult.message}
           </div>
         )}
       </div>

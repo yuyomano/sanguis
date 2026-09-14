@@ -201,10 +201,12 @@ export class EmergencyRequestsService {
       }
     }
 
-    await this.prisma.emergencyRequest.update({
-      where: { id },
-      data: { targetReachedCount: { increment: donors.length } },
-    });
+    if (sent > 0) {
+      await this.prisma.emergencyRequest.update({
+        where: { id },
+        data: { targetReachedCount: { increment: sent } },
+      });
+    }
 
     return { notifiedDonors: donors.length, sent, failed };
   }
