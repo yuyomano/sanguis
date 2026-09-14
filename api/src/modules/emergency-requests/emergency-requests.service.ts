@@ -62,6 +62,9 @@ function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): num
 
 const CATEGORY_RANK: Record<string, number> = { VIP: 0, RECURRENT: 1, CASUAL: 2 };
 
+// Radio de búsqueda sugerido (km). Rh-: triplicar el radio de búsqueda.
+const DEFAULT_RADIUS_KM = 50;
+
 @Injectable()
 export class EmergencyRequestsService {
   constructor(
@@ -147,7 +150,9 @@ export class EmergencyRequestsService {
         return (CATEGORY_RANK[a.category] ?? 3) - (CATEGORY_RANK[b.category] ?? 3);
       });
 
-    return { compatibleTypes, requiredDays, candidates };
+    const defaultRadiusKm = request.bloodType.endsWith('_NEGATIVE') ? DEFAULT_RADIUS_KM * 3 : DEFAULT_RADIUS_KM;
+
+    return { compatibleTypes, requiredDays, candidates, defaultRadiusKm };
   }
 
   async notify(id: string, dto: NotifyCandidatesDto) {

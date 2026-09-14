@@ -59,7 +59,9 @@ export default function EmergencyRequestDetailPage() {
   const [candidatesError, setCandidatesError] = useState<string | null>(null)
   const [cityFilter, setCityFilter] = useState('')
   const [radiusFilter, setRadiusFilter] = useState('')
+  const [defaultRadiusKm, setDefaultRadiusKm] = useState<number | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const autoSelectedRef = useRef(false)
 
   const [channels, setChannels] = useState<Set<string>>(new Set(['WHATSAPP']))
   const [confirmNotify, setConfirmNotify] = useState(false)
@@ -90,13 +92,21 @@ export default function EmergencyRequestDetailPage() {
           return
         }
         setCandidatesError(null)
-        setCandidates(data.candidates || [])
+        const list: Candidate[] = data.candidates || []
+        setCandidates(list)
+        if (data.defaultRadiusKm != null) setDefaultRadiusKm(data.defaultRadiusKm)
+        // Preselecciona los 50 candidatos más cercanos/prioritarios al cargar, una sola vez.
+        if (!autoSelectedRef.current) {
+          autoSelectedRef.current = true
+          setSelected(new Set(list.slice(0, 50).map((c) => c.id)))
+        }
       })
       .catch(() => { if (seq === candidatesSeq.current) setCandidatesError('Error de red.') })
       .finally(() => { if (seq === candidatesSeq.current) setCandidatesLoading(false) })
   }
 
   useEffect(() => { loadRequest().finally(() => setLoading(false)) }, [id])
+  useEffect(() => { autoSelectedRef.current = false }, [id])
   useEffect(() => { loadCandidates() }, [id, cityFilter, radiusFilter])
 
   async function changeStatus(status: string) {
@@ -263,6 +273,14 @@ export default function EmergencyRequestDetailPage() {
                 className="px-2.5 py-1.5 border border-input rounded-md text-xs w-20 focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
+            {defaultRadiusKm != null && radiusFilter !== String(defaultRadiusKm) && (
+              <button
+                onClick={() => setRadiusFilter(String(defaultRadiusKm))}
+                className="px-2.5 py-1.5 border border-input rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors whitespace-nowrap"
+              >
+                Ampliar a {defaultRadiusKm} km
+              </button>
+            )}
             <button
               onClick={exportCsv}
               disabled={candidates.length === 0}
