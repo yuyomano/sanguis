@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   User, Crown, Droplets, Gift, Phone, Mail, Calendar,
   CheckCircle, XCircle, ArrowLeft, Plus, MapPin, FlaskConical,
-  ShieldCheck, ShieldAlert,
+  ShieldCheck, ShieldAlert, Stethoscope,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 
@@ -40,6 +40,14 @@ const APPT_STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Pendiente', CHECKED_IN: 'Presente', CANCELLED: 'Cancelada',
   NO_SHOW: 'No se presentó', COMPLETED: 'Completada',
 }
+const MEDICAL_EXCLUSION_LABELS: Record<string, string> = {
+  HEPATITIS_B: 'Hepatitis B', HEPATITIS_C: 'Hepatitis C', HIV_AIDS: 'VIH/SIDA',
+  CHAGAS: 'Chagas', SYPHILIS: 'Sífilis', MALARIA: 'Malaria', TUBERCULOSIS: 'Tuberculosis',
+  CANCER: 'Cáncer', HEART_DISEASE: 'Enfermedad cardíaca', EPILEPSY: 'Epilepsia',
+  RECENT_TATTOO_PIERCING: 'Tatuaje/perforación reciente', RECENT_SURGERY: 'Cirugía reciente',
+  RECENT_PREGNANCY: 'Embarazo reciente', HIGH_RISK_SEXUAL_BEHAVIOR: 'Conducta sexual de riesgo',
+  IV_DRUG_USE: 'Uso de drogas IV', OTHER: 'Otra',
+}
 
 export default function DonorProfilePage() {
   const { id } = useParams<{ id: string }>()
@@ -55,6 +63,10 @@ export default function DonorProfilePage() {
   const [idForm, setIdForm] = useState({ idType: 'CEDULA', idNumber: '' })
   const [savingId, setSavingId] = useState(false)
   const [idError, setIdError] = useState('')
+  const [editingMedical, setEditingMedical] = useState(false)
+  const [medicalForm, setMedicalForm] = useState({ birthDate: '', allergies: '' })
+  const [medicalExclusionsForm, setMedicalExclusionsForm] = useState<string[]>([])
+  const [savingMedical, setSavingMedical] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -68,6 +80,11 @@ export default function DonorProfilePage() {
         latitude: d.latitude?.toString() || '', longitude: d.longitude?.toString() || '',
       })
       setIdForm({ idType: d.idType || 'CEDULA', idNumber: d.idNumber || '' })
+      setMedicalForm({
+        birthDate: d.birthDate ? d.birthDate.slice(0, 10) : '',
+        allergies: (d.allergies || []).join(', '),
+      })
+      setMedicalExclusionsForm(d.medicalExclusions || [])
     }).finally(() => setLoading(false))
   }, [id])
 
@@ -130,6 +147,31 @@ export default function DonorProfilePage() {
       setIdError(body?.message || 'No se pudo guardar')
     }
     setSavingId(false)
+  }
+
+  function toggleExclusionForm(key: string) {
+    setMedicalExclusionsForm(m => m.includes(key) ? m.filter(x => x !== key) : [...m, key])
+  }
+
+  async function saveMedical() {
+    setSavingMedical(true)
+    const body: Record<string, any> = {
+      birthDate: medicalForm.birthDate || null,
+      allergies: medicalForm.allergies.split(',').map(a => a.trim()).filter(Boolean),
+      medicalExclusions: medicalExclusionsForm,
+    }
+    const res = await apiFetch(`/donors/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      // Ancla a medianoche local antes de guardar en estado: new Date('YYYY-MM-DD') se
+      // interpreta como UTC y correría la fecha un día hacia atrás al mostrarse.
+      setDonor((d: any) => ({ ...d, ...body, birthDate: body.birthDate ? `${body.birthDate}T00:00:00.000` : null }))
+      setEditingMedical(false)
+    }
+    setSavingMedical(false)
   }
 
   if (loading) {
@@ -386,6 +428,103 @@ export default function DonorProfilePage() {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground/70">Sin ubicación registrada — útil para priorizar candidatos en solicitudes de emergencia cercanas</p>
+        )}
+      </div>
+
+      {/* Información médica */}
+      <div className="bg-card rounded-md border border-border p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
+            <Stethoscope size={16} className="text-muted-foreground" />
+            Información médica
+          </h2>
+          {!editingMedical && (
+            <button
+              onClick={() => setEditingMedical(true)}
+              className="text-sm text-primary hover:text-blood-700 font-medium"
+            >
+              Editar
+            </button>
+          )}
+        </div>
+
+        {editingMedical ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha de nacimiento</label>
+                <input
+                  type="date"
+                  value={medicalForm.birthDate}
+                  onChange={(e) => setMedicalForm((f) => ({ ...f, birthDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Alergias (separadas por coma)</label>
+                <input
+                  value={medicalForm.allergies}
+                  onChange={(e) => setMedicalForm((f) => ({ ...f, allergies: e.target.value }))}
+                  placeholder="Aspirina, penicilina..."
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-2">Antecedentes que afectan la elegibilidad</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(MEDICAL_EXCLUSION_LABELS).map(([k, label]) => (
+                  <label key={k} className="flex items-center gap-2 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={medicalExclusionsForm.includes(k)}
+                      onChange={() => toggleExclusionForm(k)}
+                      className="rounded border-input"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={saveMedical}
+                disabled={savingMedical}
+                className="px-3 py-1.5 bg-primary hover:bg-blood-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {savingMedical ? 'Guardando…' : 'Guardar'}
+              </button>
+              <button
+                onClick={() => setEditingMedical(false)}
+                className="px-3 py-1.5 border border-input rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm space-y-2">
+            <p className="text-foreground">
+              <span className="text-muted-foreground">Fecha de nacimiento: </span>
+              {donor.birthDate ? new Date(donor.birthDate).toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+            </p>
+            <p className="text-foreground">
+              <span className="text-muted-foreground">Alergias: </span>
+              {donor.allergies?.length ? donor.allergies.join(', ') : '—'}
+            </p>
+            <div>
+              <span className="text-muted-foreground">Antecedentes: </span>
+              {donor.medicalExclusions?.length ? (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {donor.medicalExclusions.map((m: string) => (
+                    <span key={m} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-alert/10 text-alert">
+                      {MEDICAL_EXCLUSION_LABELS[m] || m}
+                    </span>
+                  ))}
+                </div>
+              ) : <span className="text-foreground">Ninguno reportado</span>}
+            </div>
+          </div>
         )}
       </div>
 

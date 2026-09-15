@@ -85,12 +85,13 @@ Las integraciones (WhatsApp Cloud API, SendGrid, FCM, R2) están implementadas c
 
 ### Prisma
 `api/prisma/schema.prisma` — 24 modelos, 18 enums. Entidades núcleo: `Donor`, `BloodUnit` (+`StorageLocation`), `TestResult` (+`ExternalLab`), `DonationEvent` (+`Appointment`), `DeliveryOrder` (+`Protocol`/`Item`/`Vehicle`), `PointTransaction`/`Redemption`/`PartnerEstablishment`, `Notification` (+`Template`), `FinancialRecord`, `Badge`/`DonorBadge`, `TemperatureLog`, `RefreshToken`, `EmergencyAlert`.
+- `Donor` incluye `birthDate` (aviso de elegibilidad 18-65, la valida el personal clínico), `allergies` (`String[]`) y `medicalExclusions` (`MedicalExclusion[]`, enum estructurado con criterios de exclusión OMS/AABB adaptados a SESPAS — Hepatitis B/C, VIH, Chagas, etc.). Solo se exponen en el admin web (create/edit de donante); en móvil el donante no los auto-reporta todavía.
+- `Donor` solo se puede eliminar (`DELETE /donors/:id`) si no tiene historial asociado (`BloodUnit`, `Appointment`, `PointTransaction`, `Redemption`, `Notification`, `ExternalDonation`, `DonorBadge`, referidos); si tiene, la API responde 409. En la práctica esto limita el borrado a donantes recién creados por error.
 
 ### web/ — Next.js App Router
 - `app/(auth)/login/` público; `app/(dashboard)/*` protegido. ~13 secciones: dashboard, donors, inventory, testing, events, logistics, rewards, notifications, finance, reports, settings.
 - **Sin cliente HTTP compartido**: cada página es `'use client'` y hace `fetch(\`${process.env.NEXT_PUBLIC_API_URL}/...\`, { headers: { Authorization: \`Bearer ${token}\` } })`.
 - Token JWT en `localStorage`: `sanguis_token` (access) y `sanguis_refresh`.
-- `lib/hematology.ts` — tablas de compatibilidad ABO/Rh (glóbulos rojos y plasma con reglas invertidas), demografía LatAm, `getCompatibleDonorTypes`, `getRecommendedMethod`, `isUrgentCase`, `projectDonors`, `buildMessageTemplate`.
 - `lib/fmt.ts` — `fmtDOP` (moneda dominicana; 1 punto = 1 DOP en canjes).
 
 ### mobile/ — Expo React Native
@@ -133,12 +134,13 @@ Las integraciones (WhatsApp Cloud API, SendGrid, FCM, R2) están implementadas c
 
 ## Gotchas / deuda conocida
 
-- **Deriva de migraciones Prisma**: solo 2 migraciones para 24 modelos. El schema creció sin generar migraciones — un `migrate deploy` sobre BD limpia no reproduce el estado actual. Al tocar el schema, generar la migración que falta.
+- **Deriva de migraciones Prisma**: histórico tuvo tramos donde el schema creció sin generar migraciones (queda al menos un salto grande entre el init y la primera migración posterior). Al tocar el schema, generar siempre la migración correspondiente (`npx prisma migrate dev --name <cambio>`, o si el entorno no soporta prompts interactivos: `prisma migrate diff --from-url $DATABASE_URL --to-schema-datamodel ./prisma/schema.prisma --script` → crear manualmente `prisma/migrations/<timestamp>_<nombre>/migration.sql` → `prisma migrate deploy`).
 - **Restos de Flutter**: `mobile/lib/**` (`.dart`), `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, `sanguis.iml` son código muerto tras la migración a Expo (commit `a2fe89f`). El código vivo es `mobile/src/`.
 - **README desactualizado**: describe mobile como Flutter y puertos que no coinciden.
 - Puerto por defecto obsoleto: `mobile/src/services/api.ts` cae en `:3101` si falta `EXPO_PUBLIC_API_URL`; el real es `:3001`.
 - Sin cobertura de tests. Jest está configurado en api pero no hay specs.
 - `api/npm run lint` falla: no hay `.eslintrc`.
+- **Fechas `"YYYY-MM-DD"` y zona horaria**: `new Date("YYYY-MM-DD")` se interpreta como medianoche UTC y se muestra un día atrás en horario local (RD es UTC-4). Al recibir una fecha de un DTO/formulario, anclar a medianoche local (`` `${dateStr}T00:00:00.000` ``) antes de guardarla o de usarla en un `new Date(...)` — tanto en el backend (Prisma `DateTime`) como en updates optimistas del estado en el frontend.
 
 ## Pendientes de producto
 

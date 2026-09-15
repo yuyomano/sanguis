@@ -1,6 +1,6 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsBoolean, IsEnum, IsDateString, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BloodType, IdType } from '@prisma/client';
+import { BloodType, IdType, MedicalExclusion } from '@prisma/client';
 
 export class CreateDonorDto {
   @ApiProperty()
@@ -51,4 +51,21 @@ export class CreateDonorDto {
   @IsString()
   @IsOptional()
   adminNotes?: string;
+
+  @ApiPropertyOptional({ description: 'Fecha de nacimiento (AAAA-MM-DD)' })
+  @IsDateString()
+  @IsOptional()
+  birthDate?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Alergias reportadas por el donante' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  allergies?: string[];
+
+  @ApiPropertyOptional({ enum: MedicalExclusion, isArray: true })
+  @IsArray()
+  @IsEnum(MedicalExclusion, { each: true })
+  @IsOptional()
+  medicalExclusions?: MedicalExclusion[];
 }

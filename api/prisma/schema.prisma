@@ -37,6 +37,27 @@ enum ProductType {
   PLASMA
 }
 
+// Criterios de exclusión/diferimiento médico estándar (OMS/AABB, adaptado a SESPAS).
+// Es un aviso para el personal clínico, quien valida elegibilidad real en sitio.
+enum MedicalExclusion {
+  HEPATITIS_B
+  HEPATITIS_C
+  HIV_AIDS
+  CHAGAS
+  SYPHILIS
+  MALARIA
+  TUBERCULOSIS
+  CANCER
+  HEART_DISEASE
+  EPILEPSY
+  RECENT_TATTOO_PIERCING
+  RECENT_SURGERY
+  RECENT_PREGNANCY
+  HIGH_RISK_SEXUAL_BEHAVIOR
+  IV_DRUG_USE
+  OTHER
+}
+
 enum BloodUnitStatus {
   COLLECTED
   TESTING
@@ -219,6 +240,8 @@ model Donor {
   // Consentimiento para que instituciones externas (hospitales/otros bancos) consulten su elegibilidad/historial
   shareHistoryWithInstitutions Boolean       @default(false)
   birthDate                    DateTime?     // elegibilidad real (18-65) la valida el personal clínico; esto es solo un aviso en la app
+  allergies                    String[]      @default([])
+  medicalExclusions            MedicalExclusion[] @default([])
   notificationsEnabled         Boolean       @default(true) // opt-out de notificaciones no críticas (broadcast de eventos); alertas de emergencia siempre se envían
   termsAcceptedAt              DateTime?     // aceptación de Términos/Privacidad en el registro
   createdAt                    DateTime      @default(now())

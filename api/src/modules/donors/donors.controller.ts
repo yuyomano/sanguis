@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminRole, BloodType, DonorCategory, ProductType } from '@prisma/client';
 import { DonorsService } from './donors.service';
@@ -126,6 +126,15 @@ export class DonorsController {
   @ApiOperation({ summary: 'Actualizar datos del donante' })
   update(@Param('id') id: string, @Body() dto: UpdateDonorDto) {
     return this.donorsService.update(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...DONOR_WRITE_ROLES)
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar donante (solo si no tiene historial: sin donaciones, citas, puntos, canjes, notificaciones ni referidos)' })
+  remove(@Param('id') id: string) {
+    return this.donorsService.remove(id);
   }
 
   @ApiBearerAuth()

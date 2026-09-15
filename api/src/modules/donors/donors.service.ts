@@ -15,6 +15,12 @@ export const ELIGIBILITY_DAYS: Record<ProductType, number> = {
   PLASMA: 7,
 };
 
+// "YYYY-MM-DD" se interpreta como medianoche UTC; se ancla a medianoche local
+// para que la fecha de nacimiento no corra un día hacia atrás al mostrarse.
+function anchorLocalDate(dateStr: string): Date {
+  return dateStr.length === 10 ? new Date(`${dateStr}T00:00:00.000`) : new Date(dateStr);
+}
+
 @Injectable()
 export class DonorsService {
   constructor(
@@ -67,6 +73,9 @@ export class DonorsService {
         referredById: dto.referredById || null,
         photoUrl: dto.photoUrl || null,
         adminNotes: dto.adminNotes ? this.encryption.encrypt(dto.adminNotes) : null,
+        birthDate: dto.birthDate ? anchorLocalDate(dto.birthDate) : null,
+        allergies: dto.allergies || [],
+        medicalExclusions: dto.medicalExclusions || [],
       },
     });
     return { ...this.sanitize(donor), ...(generatedPassword ? { generatedPassword } : {}) };
@@ -131,8 +140,9 @@ export class DonorsService {
 
   async update(id: string, dto: UpdateDonorDto) {
     await this.findOne(id);
-    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, idNumber, ...rest } = dto;
+    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, idNumber, birthDate, ...rest } = dto;
     const data: Record<string, unknown> = { ...rest };
+    if (birthDate !== undefined) data.birthDate = birthDate ? anchorLocalDate(birthDate) : null;
     if (idNumber !== undefined) {
       const idNumberHash = this.encryption.hash(idNumber);
       const exists = await this.prisma.donor.findUnique({ where: { idNumberHash } });
@@ -169,6 +179,26 @@ export class DonorsService {
     await this.findOne(id);
     const donor = await this.prisma.donor.update({ where: { id }, data: { isPriorityDonor: isPriority } });
     return this.sanitize(donor);
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const [bloodUnits, appointments, pointTransactions, redemptions, notifications, externalDonations, referrals, badges] =
+      await Promise.all([
+        this.prisma.bloodUnit.count({ where: { donorId: id } }),
+        this.prisma.appointment.count({ where: { donorId: id } }),
+        this.prisma.pointTransaction.count({ where: { donorId: id } }),
+        this.prisma.redemption.count({ where: { donorId: id } }),
+        this.prisma.notification.count({ where: { donorId: id } }),
+        this.prisma.externalDonation.count({ where: { donorId: id } }),
+        this.prisma.donor.count({ where: { referredById: id } }),
+        this.prisma.donorBadge.count({ where: { donorId: id } }),
+      ]);
+    if (bloodUnits + appointments + pointTransactions + redemptions + notifications + externalDonations + referrals + badges > 0) {
+      throw new ConflictException('No se puede eliminar: el donante tiene historial asociado (donaciones, citas, puntos, notificaciones u otros registros)');
+    }
+    await this.prisma.donor.delete({ where: { id } });
+    return { deleted: true };
   }
 
   async checkEligibility(id: string, productType: ProductType = ProductType.WHOLE_BLOOD) {

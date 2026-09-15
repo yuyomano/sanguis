@@ -10,6 +10,15 @@ const BLOOD_LABELS: Record<string, string> = {
   AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
 }
 
+const MEDICAL_EXCLUSION_LABELS: Record<string, string> = {
+  HEPATITIS_B: 'Hepatitis B', HEPATITIS_C: 'Hepatitis C', HIV_AIDS: 'VIH/SIDA',
+  CHAGAS: 'Chagas', SYPHILIS: 'Sífilis', MALARIA: 'Malaria', TUBERCULOSIS: 'Tuberculosis',
+  CANCER: 'Cáncer', HEART_DISEASE: 'Enfermedad cardíaca', EPILEPSY: 'Epilepsia',
+  RECENT_TATTOO_PIERCING: 'Tatuaje/perforación reciente', RECENT_SURGERY: 'Cirugía reciente',
+  RECENT_PREGNANCY: 'Embarazo reciente', HIGH_RISK_SEXUAL_BEHAVIOR: 'Conducta sexual de riesgo',
+  IV_DRUG_USE: 'Uso de drogas IV', OTHER: 'Otra',
+}
+
 const COUNTRY_CODES = [
   { code: '+1-809', label: 'RD (+1-809)' },
   { code: '+1-829', label: 'RD (+1-829)' },
@@ -53,9 +62,16 @@ export default function NewDonorPage() {
     bloodType: '',
     password: '',
     adminNotes: '',
+    birthDate: '',
+    allergies: '',
   })
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoBase64, setPhotoBase64] = useState<string | null>(null)
+  const [medicalExclusions, setMedicalExclusions] = useState<string[]>([])
+
+  function toggleExclusion(key: string) {
+    setMedicalExclusions(m => m.includes(key) ? m.filter(x => x !== key) : [...m, key])
+  }
 
   // Referral search
   const [refSearch, setRefSearch] = useState('')
@@ -127,6 +143,10 @@ export default function NewDonorPage() {
     if (referredBy) body.referredById = referredBy.id
     if (photoBase64) body.photoUrl = photoBase64
     if (form.adminNotes.trim()) body.adminNotes = form.adminNotes.trim()
+    if (form.birthDate) body.birthDate = form.birthDate
+    const allergyList = form.allergies.split(',').map(a => a.trim()).filter(Boolean)
+    if (allergyList.length) body.allergies = allergyList
+    if (medicalExclusions.length) body.medicalExclusions = medicalExclusions
 
     try {
       const res = await apiFetch('/donors', {
@@ -244,6 +264,18 @@ export default function NewDonorPage() {
               />
             </div>
           </div>
+
+          {/* Fecha de nacimiento */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Fecha de nacimiento</label>
+            <input
+              type="date"
+              value={form.birthDate}
+              onChange={(e) => set('birthDate', e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            />
+            <p className="text-xs text-muted-foreground/70 mt-1">Elegibilidad (18-65 años) la valida el personal clínico</p>
+          </div>
         </div>
 
         {/* Contacto */}
@@ -304,6 +336,39 @@ export default function NewDonorPage() {
                 {v}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Información médica */}
+        <div className="bg-card rounded-md border border-border p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Información médica</h2>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Alergias</label>
+            <input
+              value={form.allergies}
+              onChange={(e) => set('allergies', e.target.value)}
+              placeholder="Aspirina, penicilina, látex... (separadas por coma)"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Antecedentes que afectan la elegibilidad</label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(MEDICAL_EXCLUSION_LABELS).map(([k, label]) => (
+                <label key={k} className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={medicalExclusions.includes(k)}
+                    onChange={() => toggleExclusion(k)}
+                    className="rounded border-input"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground/70 mt-2">Es un aviso para el personal clínico; la elegibilidad real se valida en sitio</p>
           </div>
         </div>
 
