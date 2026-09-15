@@ -9,12 +9,18 @@ export class FinanceService {
   constructor(private prisma: PrismaService) {}
 
   async createRecord(dto: CreateFinancialRecordDto) {
-    return this.prisma.financialRecord.create({ data: { ...dto, date: new Date(dto.date) } });
+    // dto.date llega como "YYYY-MM-DD" desde el formulario web (input type=date);
+    // igual que en getSummary, se ancla a medianoche local para no correr un día
+    // hacia atrás al mostrarse (new Date('YYYY-MM-DD') se interpreta como UTC).
+    const date = dto.date.length === 10 ? new Date(`${dto.date}T00:00:00.000`) : new Date(dto.date);
+    return this.prisma.financialRecord.create({ data: { ...dto, date } });
   }
 
   async getSummary(startDate?: string, endDate?: string, currency = 'DOP') {
-    const start = startDate ? new Date(startDate) : dayjs().startOf('month').toDate();
-    const end = endDate ? new Date(endDate) : dayjs().endOf('month').toDate();
+    // Mismo cuidado que en reports.service.ts: anclar a inicio/fin de día local
+    // para que "YYYY-MM-DD" no se interprete como medianoche UTC.
+    const start = startDate ? new Date(`${startDate}T00:00:00.000`) : dayjs().startOf('month').toDate();
+    const end = endDate ? new Date(`${endDate}T23:59:59.999`) : dayjs().endOf('month').toDate();
 
     const records = await this.prisma.financialRecord.findMany({
       where: { date: { gte: start, lte: end }, currency },

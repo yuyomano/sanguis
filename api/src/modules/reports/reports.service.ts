@@ -7,8 +7,12 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async getSespasReport(fromDate?: string, toDate?: string) {
-    const from = fromDate ? new Date(fromDate) : dayjs().startOf('month').toDate();
-    const to = toDate ? new Date(toDate) : dayjs().endOf('month').toDate();
+    // fromDate/toDate llegan como "YYYY-MM-DD" (input type=date, sin zona horaria).
+    // new Date('YYYY-MM-DD') se interpreta como medianoche UTC, lo que corre el
+    // período un día hacia atrás al mostrarlo en hora local y excluye todo el
+    // día "hasta" — por eso se ancla explícitamente a inicio/fin de día local.
+    const from = fromDate ? new Date(`${fromDate}T00:00:00.000`) : dayjs().startOf('month').toDate();
+    const to = toDate ? new Date(`${toDate}T23:59:59.999`) : dayjs().endOf('month').toDate();
 
     const [bloodUnits, testResults, newDonors, totalDonors, deliveries, alerts] =
       await Promise.all([
