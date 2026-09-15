@@ -55,7 +55,7 @@ export default function EventDetailPage() {
     try {
       const res = await apiFetch(`/notifications/events/${id}/broadcast`, { method: 'POST' })
       const data = await res.json()
-      setBroadcastResult(`Notificación enviada a ${data.notified ?? '—'} donantes`)
+      setBroadcastResult(`Notificación enviada a ${data.sent ?? '—'} donantes${data.failed ? ` (${data.failed} fallidas)` : ''}`)
     } catch {
       setBroadcastResult('Error al enviar notificaciones')
     } finally {

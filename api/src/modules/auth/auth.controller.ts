@@ -85,7 +85,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Estado de integraciones del sistema (admin)' })
   getSystemStatus() {
     return {
-      whatsapp: !!(process.env.META_WHATSAPP_TOKEN && process.env.META_PHONE_NUMBER_ID),
+      whatsapp: !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
       sendgrid: !!process.env.SENDGRID_API_KEY,
       firebase: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
       database: true,

@@ -49,12 +49,22 @@ export class NotificationsService {
     });
 
     for (const donor of donors) {
+      // WhatsApp y email son canales independientes: si uno falla (p.ej. credenciales
+      // no configuradas) no debe impedir el intento del otro.
+      let whatsappOk = false;
       try {
         await this.whatsapp.sendTextMessage(
           donor.phone,
           `🩸 *Sanguis* — Evento de donación\n\n*${event.name}*\n📅 ${formattedDate}\n📍 ${event.locationAddress}\n\nTu donación puede salvar hasta 3 vidas. Reserva tu cita en la app Sanguis.\n\n¿Conoces a alguien? Comparte tu código: ${donor.referralCode}`,
         );
-        if (donor.email) {
+        whatsappOk = true;
+      } catch {
+        // se cuenta más abajo si el email también falla
+      }
+
+      let emailOk = false;
+      if (donor.email) {
+        try {
           await this.email.sendEmail(
             donor.email,
             `Evento de Donación: ${event.name}`,
@@ -65,7 +75,13 @@ export class NotificationsService {
               donor.referralCode,
             ),
           );
+          emailOk = true;
+        } catch {
+          // se cuenta más abajo si whatsapp también falla
         }
+      }
+
+      if (whatsappOk || emailOk) {
         await this.prisma.notification.create({
           data: {
             donorId: donor.id,
@@ -77,7 +93,7 @@ export class NotificationsService {
           },
         });
         results.sent++;
-      } catch {
+      } else {
         results.failed++;
       }
     }

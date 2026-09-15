@@ -18,7 +18,7 @@ const INTEGRATIONS = [
     label: 'Meta WhatsApp Business',
     Icon: MessageSquare,
     color: '#25D366',
-    envVars: ['META_WHATSAPP_TOKEN', 'META_PHONE_NUMBER_ID'],
+    envVars: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'],
     description: 'Mensajes automáticos a donantes — alertas, confirmaciones y eventos.',
     docsUrl: 'https://developers.facebook.com/docs/whatsapp/cloud-api',
   },
