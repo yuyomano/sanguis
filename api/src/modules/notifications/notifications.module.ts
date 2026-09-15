@@ -8,6 +8,6 @@ import { FcmService } from './fcm.service';
 @Module({
   controllers: [NotificationsController],
   providers: [NotificationsService, WhatsappService, EmailService, FcmService],
-  exports: [NotificationsService, FcmService],
+  exports: [NotificationsService, FcmService, WhatsappService, EmailService],
 })
 export class NotificationsModule {}

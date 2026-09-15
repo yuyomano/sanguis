@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { Gift, Star, Building2, Plus, Pencil, X, Check, Trash2, Users, ReceiptText, Award, Trophy } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,10 +35,6 @@ const CATEGORIES = [
   'Farmacia', 'Clínica', 'Laboratorio', 'Restaurante', 'Supermercado',
   'Gimnasio', 'Óptica', 'Hotel', 'Servicios', 'Otro',
 ]
-
-const API = process.env.NEXT_PUBLIC_API_URL
-
-function getToken() { return localStorage.getItem('sanguis_token') }
 
 // ─── PartnerModal ─────────────────────────────────────────────────────────────
 
@@ -89,11 +86,11 @@ function PartnerModal({ partner, onClose, onSaved }: PartnerModalProps) {
     setError('')
     try {
       const body = { ...form, taxDeductionPct: Number(form.taxDeductionPct), availableRewards: rewards }
-      const url = editing ? `${API}/rewards/partners/${partner!.id}` : `${API}/rewards/partners`
+      const url = editing ? `/rewards/partners/${partner!.id}` : '/rewards/partners'
       const method = editing ? 'PATCH' : 'POST'
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error(await res.text())
@@ -299,9 +296,7 @@ export default function RewardsPage() {
 
   function fetchPartners() {
     setLoadingPartners(true)
-    fetch(`${API}/rewards/partners`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
+    apiFetch('/rewards/partners')
       .then((r) => r.json())
       .then((data) => setPartners(Array.isArray(data) ? data : []))
       .catch(() => {})
@@ -310,9 +305,7 @@ export default function RewardsPage() {
 
   function fetchRedemptions(page = 1) {
     setLoadingRedemptions(true)
-    fetch(`${API}/rewards/redemptions?page=${page}&limit=20`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
+    apiFetch(`/rewards/redemptions?page=${page}&limit=20`)
       .then((r) => r.json())
       .then((data) => {
         setRedemptions(data.redemptions ?? [])
@@ -326,7 +319,7 @@ export default function RewardsPage() {
 
   function fetchBadges() {
     setLoadingBadges(true)
-    fetch(`${API}/rewards/badges`, { headers: { Authorization: `Bearer ${getToken()}` } })
+    apiFetch('/rewards/badges')
       .then(r => r.json())
       .then(data => { setBadges(Array.isArray(data) ? data : []); badgesLoaded.current = true })
       .catch(() => {})
@@ -337,9 +330,9 @@ export default function RewardsPage() {
     if (!badgeForm.name.trim()) return
     setSavingBadge(true)
     try {
-      const res = await fetch(`${API}/rewards/badges`, {
+      const res = await apiFetch('/rewards/badges', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...badgeForm, condition: {} }),
       })
       if (!res.ok) throw new Error()
@@ -354,10 +347,7 @@ export default function RewardsPage() {
   }
 
   async function deleteBadge(id: string) {
-    await fetch(`${API}/rewards/badges/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
+    await apiFetch(`/rewards/badges/${id}`, { method: 'DELETE' })
     setConfirmDeleteBadge(null)
     setBadges(prev => prev.filter(b => b.id !== id))
   }

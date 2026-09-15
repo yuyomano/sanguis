@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
@@ -7,9 +6,13 @@ import { api } from './api'
 const isExpoGo = Constants.appOwnership === 'expo'
 
 export async function registerForPushNotifications(): Promise<string | null> {
-  // Push notifications not supported in Expo Go since SDK 53
+  // Push notifications no están disponibles en Expo Go desde el SDK 53: el módulo nativo
+  // no existe en el binario de Expo Go, así que ni siquiera se puede importar 'expo-notifications'
+  // sin que crashee (requireNativeModule corre al importar, no al llamar funciones).
   if (isExpoGo) return null
   if (!Device.isDevice) return null
+
+  const Notifications = require('expo-notifications') as typeof import('expo-notifications')
 
   const { status: existing } = await Notifications.getPermissionsAsync()
   let finalStatus = existing

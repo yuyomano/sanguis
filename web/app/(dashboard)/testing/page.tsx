@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FlaskConical, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface PendingTest {
   id: string
@@ -22,10 +23,7 @@ export default function TestingPage() {
   const [submitting, setSubmitting] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/testing/pending`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/testing/pending')
       .then((r) => r.json())
       .then(setPending)
       .catch(() => {})
@@ -34,14 +32,13 @@ export default function TestingPage() {
 
   async function quickApprove(testId: string, viable: boolean) {
     setSubmitting(testId)
-    const token = localStorage.getItem('sanguis_token')
     const results = viable
       ? { HBsAg: 'negative', HIV: 'negative', HCV: 'negative', Syphilis: 'negative', Chagas: 'negative', Hemoglobin: 14.0 }
       : { HBsAg: 'positive', HIV: 'negative', HCV: 'negative', Syphilis: 'negative' }
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testing/tests/${testId}/results`, {
+    await apiFetch(`/testing/tests/${testId}/results`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ results }),
     })
 

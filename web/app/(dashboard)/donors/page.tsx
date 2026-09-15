@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Search, Crown, User, Plus, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api'
 
 interface Donor {
   id: string
@@ -86,16 +87,12 @@ export default function DonorsPage() {
 
   async function fetchDonors() {
     setLoading(true)
-    const token = localStorage.getItem('sanguis_token')
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (category) params.set('category', category)
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/donors?${params}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      )
+      const res = await apiFetch(`/donors?${params}`)
       const data = await res.json()
       setDonors(data.donors || [])
       setTotal(data.total || 0)

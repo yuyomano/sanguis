@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { FileText, Droplets, FlaskConical, Users, Truck, AlertTriangle, Printer, Thermometer, Plus, Download } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
@@ -90,13 +91,9 @@ export default function ReportsPage() {
   const [logForm, setLogForm] = useState({ tempCelsius: '', locationId: '', recordedBy: '', notes: '' })
   const [loggingTemp, setLoggingTemp] = useState(false)
 
-  const api = process.env.NEXT_PUBLIC_API_URL
-  const token = () => localStorage.getItem('sanguis_token')
-  const headers = () => ({ Authorization: `Bearer ${token()}` })
-
   function fetchReport() {
     setLoading(true)
-    fetch(`${api}/reports/sespas?from=${from}&to=${to}`, { headers: headers() })
+    apiFetch(`/reports/sespas?from=${from}&to=${to}`)
       .then(r => r.json()).then(setReport).catch(() => {}).finally(() => setLoading(false))
   }
 
@@ -104,13 +101,13 @@ export default function ReportsPage() {
     setTempLoading(true)
     const params = new URLSearchParams({ limit: '30' })
     if (selectedLocation) params.set('locationId', selectedLocation)
-    fetch(`${api}/reports/temperature?${params}`, { headers: headers() })
+    apiFetch(`/reports/temperature?${params}`)
       .then(r => r.json()).then(setTempLogs).catch(() => {}).finally(() => setTempLoading(false))
   }
 
   useEffect(() => {
     fetchReport()
-    fetch(`${api}/blood-units/locations`, { headers: headers() })
+    apiFetch('/blood-units/locations')
       .then(r => r.json()).then(setLocations).catch(() => {})
   }, [])
 
@@ -119,9 +116,9 @@ export default function ReportsPage() {
   async function submitTempLog(e: React.FormEvent) {
     e.preventDefault()
     setLoggingTemp(true)
-    await fetch(`${api}/reports/temperature`, {
+    await apiFetch('/reports/temperature', {
       method: 'POST',
-      headers: { ...headers(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tempCelsius: parseFloat(logForm.tempCelsius),
         locationId: logForm.locationId || undefined,

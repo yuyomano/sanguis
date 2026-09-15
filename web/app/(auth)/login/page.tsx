@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { setAccessToken } from '@/lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/admin/login`, {
         method: 'POST',
+        credentials: 'include', // recibe la cookie httpOnly con el refresh token
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
@@ -27,9 +29,8 @@ export default function LoginPage() {
         return
       }
 
-      const { accessToken, refreshToken } = await res.json()
-      localStorage.setItem('sanguis_token', accessToken)
-      localStorage.setItem('sanguis_refresh', refreshToken)
+      const { accessToken } = await res.json()
+      setAccessToken(accessToken) // solo en memoria — nunca en localStorage
       router.push('/dashboard')
     } catch {
       setError('Error de conexión')
@@ -41,16 +42,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md animate-[fade-up_0.4s_ease-out]">
-        {/* Marca: sin emoji — una marca de unidad de sangre trazada, no decoración */}
-        <div className="flex items-center gap-3 mb-10">
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
-            <rect x="1" y="1" width="32" height="32" rx="6" stroke="#8E2436" strokeWidth="1.5" />
-            <path d="M17 8c3.5 4.8 6 8.1 6 11a6 6 0 1 1-12 0c0-2.9 2.5-6.2 6-11Z" fill="#8E2436" />
-          </svg>
-          <div>
-            <h1 className="font-display text-xl font-semibold leading-none text-foreground">Sanguis</h1>
-            <p className="text-xs text-muted-foreground mt-1">Panel de administración</p>
-          </div>
+        <div className="flex flex-col items-center mb-10">
+          <img src="/logo.png" alt="Sanguis" className="h-20 w-auto" />
+          <p className="text-xs text-muted-foreground mt-1">Panel de administración</p>
         </div>
 
         <div className="border border-border bg-card rounded-md p-8">

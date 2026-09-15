@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getAccessToken, hydrateSession, apiLogout } from '@/lib/api'
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
   Settings,
   LogOut,
   FileBarChart,
+  Siren,
 } from 'lucide-react'
 
 const nav = [
@@ -24,6 +26,7 @@ const nav = [
   { href: '/inventory', label: 'Inventario', icon: Droplets },
   { href: '/testing', label: 'Laboratorio', icon: FlaskConical },
   { href: '/events', label: 'Eventos', icon: CalendarDays },
+  { href: '/emergency', label: 'Emergencias', icon: Siren },
   { href: '/logistics', label: 'Logística', icon: Truck },
   { href: '/rewards', label: 'Socios y Canjes', icon: Gift },
   { href: '/notifications', label: 'Notificaciones', icon: Bell },
@@ -35,26 +38,32 @@ const nav = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  // El layout no se remonta al navegar entre secciones del dashboard, así que
+  // esto corre una sola vez por carga de la app — no en cada cambio de ruta
+  // (evita golpear /auth/refresh, que está limitado a 10 req/5min).
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) router.replace('/login')
-  }, [pathname])
+    if (getAccessToken()) {
+      setChecking(false)
+      return
+    }
+    hydrateSession().then((ok) => {
+      if (!ok) router.replace('/login')
+      setChecking(false)
+    })
+  }, [])
+
+  if (checking) return null
 
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
-          <svg width="26" height="26" viewBox="0 0 34 34" fill="none" aria-hidden="true" className="shrink-0">
-            <rect x="1" y="1" width="32" height="32" rx="6" stroke="#8E2436" strokeWidth="1.5" />
-            <path d="M17 8c3.5 4.8 6 8.1 6 11a6 6 0 1 1-12 0c0-2.9 2.5-6.2 6-11Z" fill="#8E2436" />
-          </svg>
-          <div>
-            <p className="font-display font-semibold text-foreground leading-none">Sanguis</p>
-            <p className="text-xs text-muted-foreground mt-1">Panel de administración</p>
-          </div>
+        <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border">
+          <img src="/logo.png" alt="Sanguis" className="h-9 w-auto shrink-0" />
+          <p className="text-xs text-muted-foreground">Panel de administración</p>
         </div>
 
         {/* Navigation */}
@@ -81,8 +90,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logout */}
         <div className="px-3 py-4 border-t border-border">
           <button
-            onClick={() => {
-              localStorage.removeItem('sanguis_token')
+            onClick={async () => {
+              await apiLogout()
               window.location.href = '/login'
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-alert/5 hover:text-alert transition-colors w-full"

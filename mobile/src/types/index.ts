@@ -21,14 +21,30 @@ export interface Donor {
   name: string
   email: string
   phone: string
-  idNumber: string
+  idType: 'CEDULA' | 'PASSPORT' | null
+  idNumber: string | null
   bloodType: BloodType
   pointsBalance: number
   category: 'CASUAL' | 'RECURRENT' | 'VIP'
   referralCode: string
   lastDonationDate: string | null
   isActive: boolean
+  city: string | null
+  address: string | null
+  latitude: number | null
+  longitude: number | null
+  shareHistoryWithInstitutions: boolean
+  notificationsEnabled: boolean
+  appointments?: Appointment[]
 }
+
+export type ProductType = 'WHOLE_BLOOD' | 'PLATELETS' | 'PLASMA'
+
+export const PRODUCT_LABELS: Record<ProductType, string> = {
+  WHOLE_BLOOD: 'Sangre completa', PLATELETS: 'Plaquetas', PLASMA: 'Plasma',
+}
+
+export const PRODUCT_TYPES: ProductType[] = ['WHOLE_BLOOD', 'PLATELETS', 'PLASMA']
 
 export interface BloodUnit {
   id: string
@@ -42,13 +58,24 @@ export interface BloodUnit {
 export interface DonationEvent {
   id: string
   name: string
+  type: string
   description: string | null
-  startDate: string
-  endDate: string
-  locationName: string
+  startDatetime: string
+  endDatetime: string
   locationAddress: string
+  capacity: number
+  registeredCount: number
   status: string
-  targetUnits: number | null
+}
+
+export interface Appointment {
+  id: string
+  eventId: string
+  scheduledTime: string
+  productType: ProductType
+  status: 'SCHEDULED' | 'CHECKED_IN' | 'CANCELLED' | 'NO_SHOW' | 'COMPLETED'
+  qrCode: string
+  event?: DonationEvent
 }
 
 export interface Partner {
@@ -86,21 +113,3 @@ export interface TestResult {
   notes: string | null
 }
 
-export type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  MainTabs: undefined
-  EventDetail: { id: string; name: string }
-  Notifications: undefined
-  Settings: undefined
-  TestResults: undefined
-  BloodTracker: undefined
-}
-
-export type TabParamList = {
-  Home: undefined
-  Donations: undefined
-  Events: undefined
-  Rewards: undefined
-  Profile: undefined
-}

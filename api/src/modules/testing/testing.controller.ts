@@ -1,13 +1,18 @@
 import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AdminRole } from '@prisma/client';
 import { TestingService } from './testing.service';
 import { CreateTestResultDto } from './dto/create-test-result.dto';
 import { SubmitResultsDto } from './dto/submit-results.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
+// Testing de viabilidad: laboratorio (LAB_TECH) y administración.
 @ApiTags('testing')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.LAB_TECH)
 @Controller('testing')
 export class TestingController {
   constructor(private readonly testingService: TestingService) {}

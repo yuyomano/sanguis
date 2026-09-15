@@ -1,11 +1,8 @@
-import { IsString, IsDateString } from 'class-validator';
+import { IsString, IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ProductType } from '@prisma/client';
 
 export class CreateAppointmentDto {
-  @ApiProperty()
-  @IsString()
-  donorId: string;
-
   @ApiProperty()
   @IsString()
   eventId: string;
@@ -13,4 +10,9 @@ export class CreateAppointmentDto {
   @ApiProperty()
   @IsDateString()
   scheduledTime: string;
+
+  @ApiProperty({ enum: ProductType, required: false, default: ProductType.WHOLE_BLOOD })
+  @IsOptional()
+  @IsEnum(ProductType)
+  productType?: ProductType;
 }

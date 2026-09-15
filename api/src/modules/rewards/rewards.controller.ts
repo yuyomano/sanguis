@@ -1,9 +1,18 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AdminRole } from '@prisma/client';
 import { RewardsService } from './rewards.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DonorJwtAuthGuard } from '../../common/guards/donor-jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { RedeemPointsDto } from './dto/redeem-points.dto';
+
+// Fidelización/canjes: lectura (redenciones/transacciones/badges de donante) abierta
+// a socios (PARTNER) y administración; alta/baja de partners y badges solo admin —
+// un PARTNER no debe poder crear/eliminar establecimientos o insignias ajenas.
+const REWARDS_ADMIN_ROLES = [AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.PARTNER];
+const REWARDS_WRITE_ROLES = [AdminRole.SUPER_ADMIN, AdminRole.ADMIN];
 
 @ApiTags('rewards')
 @Controller('rewards')
@@ -17,7 +26,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_WRITE_ROLES)
   @Post('partners')
   @ApiOperation({ summary: 'Crear establecimiento aliado (admin)' })
   createPartner(@Body() body: any) {
@@ -25,7 +35,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_WRITE_ROLES)
   @Patch('partners/:id')
   @ApiOperation({ summary: 'Actualizar establecimiento aliado (admin)' })
   updatePartner(@Param('id') id: string, @Body() body: any) {
@@ -33,7 +44,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_ADMIN_ROLES)
   @Get('redemptions')
   @ApiOperation({ summary: 'Historial de canjes (admin)' })
   getRedemptions(@Query('page') page: string, @Query('limit') limit: string) {
@@ -57,7 +69,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_ADMIN_ROLES)
   @Get('donors/:donorId/transactions')
   @ApiOperation({ summary: 'Historial de transacciones de puntos del donante' })
   getTransactions(@Param('donorId') donorId: string) {
@@ -71,7 +84,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_WRITE_ROLES)
   @Post('badges')
   @ApiOperation({ summary: 'Crear insignia (admin)' })
   createBadge(@Body() body: any) {
@@ -79,7 +93,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_WRITE_ROLES)
   @Delete('badges/:id')
   @ApiOperation({ summary: 'Eliminar insignia (admin)' })
   deleteBadge(@Param('id') id: string) {
@@ -87,7 +102,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_WRITE_ROLES)
   @Post('donors/:donorId/badges')
   @ApiOperation({ summary: 'Otorgar insignia a donante (admin)' })
   awardBadge(@Param('donorId') donorId: string, @Body() body: { badgeId: string }) {
@@ -95,7 +111,8 @@ export class RewardsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...REWARDS_ADMIN_ROLES)
   @Get('donors/:donorId/badges')
   @ApiOperation({ summary: 'Ver insignias de un donante' })
   getDonorBadges(@Param('donorId') donorId: string) {

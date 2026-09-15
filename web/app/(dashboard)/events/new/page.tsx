@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, CalendarDays, Truck } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 export default function NewEventPage() {
   const router = useRouter()
@@ -29,7 +30,6 @@ export default function NewEventPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const token = localStorage.getItem('sanguis_token')
 
     const body: Record<string, any> = {
       name: form.name,
@@ -44,9 +44,9 @@ export default function NewEventPage() {
     if (form.longitude) body.longitude = parseFloat(form.longitude)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
+      const res = await apiFetch('/events', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       if (!res.ok) {

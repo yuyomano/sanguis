@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, FlaskConical, CheckCircle, XCircle, Share2 } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const SEROLOGICAL_MARKERS = [
   { key: 'HBsAg',    label: 'HBsAg (Hepatitis B)' },
@@ -40,13 +41,8 @@ export default function TestResultsPage() {
     Object.fromEntries(NUMERIC_MARKERS.map(m => [m.key, '']))
   )
 
-  const token = () => localStorage.getItem('sanguis_token')
-  const api = process.env.NEXT_PUBLIC_API_URL
-
   useEffect(() => {
-    fetch(`${api}/testing/tests/${id}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    apiFetch(`/testing/tests/${id}`)
       .then(r => r.json())
       .then(data => {
         setTest(data)
@@ -74,9 +70,9 @@ export default function TestResultsPage() {
     }
 
     try {
-      const res = await fetch(`${api}/testing/tests/${id}/results`, {
+      const res = await apiFetch(`/testing/tests/${id}/results`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ results }),
       })
       if (!res.ok) {
@@ -97,10 +93,7 @@ export default function TestResultsPage() {
   async function shareWithDonor() {
     setSharing(true)
     try {
-      await fetch(`${api}/testing/tests/${id}/share`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token()}` },
-      })
+      await apiFetch(`/testing/tests/${id}/share`, { method: 'PATCH' })
       setTest((t: any) => ({ ...t, sharedWithDonor: true }))
     } finally {
       setSharing(false)

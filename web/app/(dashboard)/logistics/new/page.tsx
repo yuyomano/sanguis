@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Search, X, Droplets } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface BloodUnit {
   id: string
@@ -53,15 +54,10 @@ export default function NewDeliveryPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) { router.replace('/login'); return }
-    const api = process.env.NEXT_PUBLIC_API_URL
-    const headers = { Authorization: `Bearer ${token}` }
-
     Promise.all([
-      fetch(`${api}/blood-units?limit=200`, { headers }).then((r) => r.json()),
-      fetch(`${api}/logistics/vehicles`, { headers }).then((r) => r.json()),
-      fetch(`${api}/logistics/protocols`, { headers }).then((r) => r.json()),
+      apiFetch('/blood-units?limit=200').then((r) => r.json()),
+      apiFetch('/logistics/vehicles').then((r) => r.json()),
+      apiFetch('/logistics/protocols').then((r) => r.json()),
     ])
       .then(([unitsData, vehiclesData, protocolsData]) => {
         const units = (unitsData.units || []).filter(
@@ -100,7 +96,6 @@ export default function NewDeliveryPage() {
     if (form.carrierType === 'OWN' && !form.vehicleId) { setError('Selecciona un vehículo'); return }
     if (form.carrierType === 'THIRD_PARTY' && !form.thirdPartyCarrier.trim()) { setError('Ingresa el nombre del transportista'); return }
 
-    const token = localStorage.getItem('sanguis_token')
     setSubmitting(true)
 
     const body: Record<string, any> = {
@@ -115,9 +110,9 @@ export default function NewDeliveryPage() {
     if (form.baseCost) body.baseCost = parseFloat(form.baseCost)
     if (form.lastMileCost) body.lastMileCost = parseFloat(form.lastMileCost)
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/deliveries`, {
+    const res = await apiFetch('/logistics/deliveries', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).catch(() => null)
 

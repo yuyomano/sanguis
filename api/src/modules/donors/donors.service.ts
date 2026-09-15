@@ -1,18 +1,25 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EncryptionService } from '../../common/services/encryption.service';
-import { BloodType, DonorCategory, ProductType } from '@prisma/client';
+import { BloodType, DonorCategory, ExternalDonationStatus, ProductType } from '@prisma/client';
 import { CreateDonorDto } from './dto/create-donor.dto';
 import { UpdateDonorDto } from './dto/update-donor.dto';
 import dayjs from 'dayjs';
 
 // Minimum days between donations by product type
-const ELIGIBILITY_DAYS: Record<ProductType, number> = {
+export const ELIGIBILITY_DAYS: Record<ProductType, number> = {
   WHOLE_BLOOD: 56,
   PLATELETS: 2,
   PLASMA: 7,
 };
+
+// "YYYY-MM-DD" se interpreta como medianoche UTC; se ancla a medianoche local
+// para que la fecha de nacimiento no corra un día hacia atrás al mostrarse.
+function anchorLocalDate(dateStr: string): Date {
+  return dateStr.length === 10 ? new Date(`${dateStr}T00:00:00.000`) : new Date(dateStr);
+}
 
 @Injectable()
 export class DonorsService {
@@ -21,38 +28,57 @@ export class DonorsService {
     private encryption: EncryptionService,
   ) {}
 
-  // Decrypt sensitive fields before returning a donor to callers
-  private decrypt(donor: any): any {
+  // Descifra campos sensibles y quita passwordHash / *Hash (índice ciego interno)
+  // antes de devolver un donante.
+  private sanitize(donor: any): any {
     if (!donor) return donor;
+    const { passwordHash: _passwordHash, idNumberHash: _idNumberHash, emailHash: _emailHash, phoneHash: _phoneHash, ...rest } = donor;
     return {
-      ...donor,
+      ...rest,
+      idNumber: donor.idNumber ? this.encryption.decrypt(donor.idNumber) : donor.idNumber,
+      phone: donor.phone ? this.encryption.decrypt(donor.phone) : donor.phone,
+      email: donor.email ? this.encryption.decrypt(donor.email) : donor.email,
+      address: donor.address ? this.encryption.decrypt(donor.address) : donor.address,
+      latitude: donor.latitude != null ? parseFloat(this.encryption.decrypt(donor.latitude)) : donor.latitude,
+      longitude: donor.longitude != null ? parseFloat(this.encryption.decrypt(donor.longitude)) : donor.longitude,
       adminNotes: donor.adminNotes ? this.encryption.decrypt(donor.adminNotes) : donor.adminNotes,
       fcmToken: donor.fcmToken ? this.encryption.decrypt(donor.fcmToken) : donor.fcmToken,
     };
   }
 
   async create(dto: CreateDonorDto) {
-    const exists = await this.prisma.donor.findUnique({ where: { idNumber: dto.idNumber } });
+    const idNumberHash = this.encryption.hash(dto.idNumber);
+    const exists = await this.prisma.donor.findUnique({ where: { idNumberHash } });
     if (exists) throw new ConflictException('Ya existe un donante con ese número de identificación');
 
-    const passwordHash = await bcrypt.hash(dto.password || dto.idNumber, 12);
+    // ponytail: sin contraseña explícita, genera una temporal aleatoria en vez de
+    // reusar la cédula (dato conocible, no un secreto). Se devuelve una sola vez
+    // en la respuesta para que el staff se la entregue al donante.
+    const generatedPassword = dto.password ? null : crypto.randomBytes(8).toString('base64url');
+    const passwordHash = await bcrypt.hash(dto.password || generatedPassword!, 12);
 
     const donor = await this.prisma.donor.create({
       data: {
         name: dto.name,
         idType: dto.idType,
-        idNumber: dto.idNumber,
-        phone: dto.phone,
-        email: dto.email,
+        idNumber: this.encryption.encrypt(dto.idNumber),
+        idNumberHash,
+        phone: this.encryption.encrypt(dto.phone),
+        phoneHash: this.encryption.hash(dto.phone),
+        email: dto.email ? this.encryption.encrypt(dto.email) : null,
+        emailHash: dto.email ? this.encryption.hash(dto.email) : null,
         bloodType: dto.bloodType,
         rhFactor: dto.rhFactor,
         passwordHash,
         referredById: dto.referredById || null,
         photoUrl: dto.photoUrl || null,
         adminNotes: dto.adminNotes ? this.encryption.encrypt(dto.adminNotes) : null,
+        birthDate: dto.birthDate ? anchorLocalDate(dto.birthDate) : null,
+        allergies: dto.allergies || [],
+        medicalExclusions: dto.medicalExclusions || [],
       },
     });
-    return this.decrypt(donor);
+    return { ...this.sanitize(donor), ...(generatedPassword ? { generatedPassword } : {}) };
   }
 
   async findAll(query: {
@@ -68,10 +94,13 @@ export class DonorsService {
     const where: any = { isActive: true };
 
     if (search) {
+      // idNumber/phone están cifrados en reposo: la búsqueda por substring ya no
+      // es posible sobre ellos, degrada a coincidencia exacta vía índice ciego.
+      const searchHash = this.encryption.hash(search);
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { idNumber: { contains: search } },
-        { phone: { contains: search } },
+        { idNumberHash: searchHash },
+        { phoneHash: searchHash },
       ];
     }
     if (bloodType) where.bloodType = bloodType;
@@ -88,7 +117,7 @@ export class DonorsService {
       this.prisma.donor.count({ where }),
     ]);
 
-    return { donors, total, page, limit };
+    return { donors: donors.map((d) => this.sanitize(d)), total, page, limit };
   }
 
   async findOne(id: string) {
@@ -106,27 +135,70 @@ export class DonorsService {
       },
     });
     if (!donor) throw new NotFoundException('Donante no encontrado');
-    return this.decrypt(donor);
+    return this.sanitize(donor);
   }
 
   async update(id: string, dto: UpdateDonorDto) {
     await this.findOne(id);
-    const { adminNotes, fcmToken, ...rest } = dto;
+    const { adminNotes, fcmToken, phone, email, address, latitude, longitude, idNumber, birthDate, ...rest } = dto;
     const data: Record<string, unknown> = { ...rest };
+    if (birthDate !== undefined) data.birthDate = birthDate ? anchorLocalDate(birthDate) : null;
+    if (idNumber !== undefined) {
+      const idNumberHash = this.encryption.hash(idNumber);
+      const exists = await this.prisma.donor.findUnique({ where: { idNumberHash } });
+      if (exists && exists.id !== id) {
+        throw new ConflictException('Ya existe un donante con ese número de identificación');
+      }
+      data.idNumber = this.encryption.encrypt(idNumber);
+      data.idNumberHash = idNumberHash;
+    }
     if (adminNotes !== undefined) data.adminNotes = adminNotes ? this.encryption.encrypt(adminNotes) : null;
     if (fcmToken !== undefined) data.fcmToken = fcmToken ? this.encryption.encrypt(fcmToken) : null;
+    if (phone !== undefined) {
+      data.phone = this.encryption.encrypt(phone);
+      data.phoneHash = this.encryption.hash(phone);
+    }
+    if (email !== undefined) {
+      data.email = email ? this.encryption.encrypt(email) : null;
+      data.emailHash = email ? this.encryption.hash(email) : null;
+    }
+    if (address !== undefined) data.address = address ? this.encryption.encrypt(address) : null;
+    if (latitude !== undefined) data.latitude = latitude != null ? this.encryption.encrypt(String(latitude)) : null;
+    if (longitude !== undefined) data.longitude = longitude != null ? this.encryption.encrypt(String(longitude)) : null;
     const donor = await this.prisma.donor.update({ where: { id }, data });
-    return this.decrypt(donor);
+    return this.sanitize(donor);
   }
 
   async setCategory(id: string, category: DonorCategory) {
     await this.findOne(id);
-    return this.prisma.donor.update({ where: { id }, data: { category } });
+    const donor = await this.prisma.donor.update({ where: { id }, data: { category } });
+    return this.sanitize(donor);
   }
 
   async setPriority(id: string, isPriority: boolean) {
     await this.findOne(id);
-    return this.prisma.donor.update({ where: { id }, data: { isPriorityDonor: isPriority } });
+    const donor = await this.prisma.donor.update({ where: { id }, data: { isPriorityDonor: isPriority } });
+    return this.sanitize(donor);
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const [bloodUnits, appointments, pointTransactions, redemptions, notifications, externalDonations, referrals, badges] =
+      await Promise.all([
+        this.prisma.bloodUnit.count({ where: { donorId: id } }),
+        this.prisma.appointment.count({ where: { donorId: id } }),
+        this.prisma.pointTransaction.count({ where: { donorId: id } }),
+        this.prisma.redemption.count({ where: { donorId: id } }),
+        this.prisma.notification.count({ where: { donorId: id } }),
+        this.prisma.externalDonation.count({ where: { donorId: id } }),
+        this.prisma.donor.count({ where: { referredById: id } }),
+        this.prisma.donorBadge.count({ where: { donorId: id } }),
+      ]);
+    if (bloodUnits + appointments + pointTransactions + redemptions + notifications + externalDonations + referrals + badges > 0) {
+      throw new ConflictException('No se puede eliminar: el donante tiene historial asociado (donaciones, citas, puntos, notificaciones u otros registros)');
+    }
+    await this.prisma.donor.delete({ where: { id } });
+    return { deleted: true };
   }
 
   async checkEligibility(id: string, productType: ProductType = ProductType.WHOLE_BLOOD) {
@@ -145,9 +217,15 @@ export class DonorsService {
 
   async recalculateCategory(donorId: string) {
     const yearStart = dayjs().startOf('year').toDate();
-    const donationsThisYear = await this.prisma.bloodUnit.count({
-      where: { donorId, collectionDate: { gte: yearStart } },
-    });
+    const [ownDonations, externalDonations] = await Promise.all([
+      this.prisma.bloodUnit.count({
+        where: { donorId, collectionDate: { gte: yearStart } },
+      }),
+      this.prisma.externalDonation.count({
+        where: { donorId, status: ExternalDonationStatus.VERIFIED, donationDate: { gte: yearStart } },
+      }),
+    ]);
+    const donationsThisYear = ownDonations + externalDonations;
 
     let category: DonorCategory = DonorCategory.CASUAL;
     if (donationsThisYear >= 6) category = DonorCategory.VIP;

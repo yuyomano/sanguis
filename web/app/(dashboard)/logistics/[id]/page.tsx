@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Truck, MapPin, Package, DollarSign, CheckCircle, Clock, Circle } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface CustodyEntry {
   timestamp: string
@@ -81,20 +82,17 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-export default function DeliveryDetailPage({ params }: { params: { id: string } }) {
+export default function DeliveryDetailPage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [order, setOrder] = useState<DeliveryDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
   const fetchOrder = () => {
-    const token = localStorage.getItem('sanguis_token')
-    if (!token) { router.replace('/login'); return }
     setLoading(true)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/deliveries/${params.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => { if (r.status === 401) { router.replace('/login'); throw new Error('401') } return r.json() })
+    apiFetch(`/logistics/deliveries/${params.id}`)
+      .then((r) => r.json())
       .then((data) => setOrder(data))
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -103,11 +101,10 @@ export default function DeliveryDetailPage({ params }: { params: { id: string } 
   useEffect(() => { fetchOrder() }, [params.id])
 
   const updateStatus = async (status: string) => {
-    const token = localStorage.getItem('sanguis_token')
     setUpdating(true)
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logistics/deliveries/${params.id}/status`, {
+    await apiFetch(`/logistics/deliveries/${params.id}/status`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     }).catch(() => {})
     setUpdating(false)

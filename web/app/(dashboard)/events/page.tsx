@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CalendarDays, MapPin, Users, Truck } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface Event {
   id: string
@@ -36,10 +37,7 @@ export default function EventsPage() {
   const [notifiedIds, setNotifiedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/events')
       .then((r) => r.json())
       .then((data) => setEvents(data.events || []))
       .catch(() => {})
@@ -47,12 +45,8 @@ export default function EventsPage() {
   }, [])
 
   async function sendBroadcast(id: string) {
-    const token = localStorage.getItem('sanguis_token')
     setNotifyingId(null)
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/events/${id}/broadcast`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {})
+    await apiFetch(`/notifications/events/${id}/broadcast`, { method: 'POST' }).catch(() => {})
     setNotifiedIds((prev) => new Set(prev).add(id))
   }
 

@@ -74,7 +74,10 @@ export class LogisticsService {
   }
 
   async updateStatus(id: string, status: DeliveryStatus, notes?: string) {
-    const delivery = await this.prisma.deliveryOrder.findUnique({ where: { id } });
+    const delivery = await this.prisma.deliveryOrder.findUnique({
+      where: { id },
+      include: { items: true },
+    });
     if (!delivery) throw new NotFoundException('Orden de entrega no encontrada');
 
     const custodyEntry = {
@@ -89,7 +92,17 @@ export class LogisticsService {
     if (status === DeliveryStatus.IN_TRANSIT) data.dispatchedAt = new Date();
     if (status === DeliveryStatus.DELIVERED) data.deliveredAt = new Date();
 
-    return this.prisma.deliveryOrder.update({ where: { id }, data });
+    const updated = await this.prisma.deliveryOrder.update({ where: { id }, data });
+
+    // Entrega confirmada: las unidades asignadas quedan usadas, cierra el ciclo de vida.
+    if (status === DeliveryStatus.DELIVERED) {
+      await this.prisma.bloodUnit.updateMany({
+        where: { id: { in: delivery.items.map((i) => i.bloodUnitId) }, status: 'ALLOCATED' },
+        data: { status: 'USED', usedAt: new Date(), usedForNote: `Entregado a ${delivery.destinationName}` },
+      });
+    }
+
+    return updated;
   }
 
   async findAll(page: any = 1, limit: any = 20) {

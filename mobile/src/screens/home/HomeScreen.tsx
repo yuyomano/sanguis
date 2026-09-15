@@ -3,19 +3,20 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import { useAuthStore } from '../../store/authStore'
 import { useDonorStore } from '../../store/donorStore'
 import { Colors } from '../../theme/colors'
 import { BLOOD_LABELS } from '../../types'
-import { RootStackParamList } from '../../types'
-
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
 
 const CATEGORY_LABELS = { CASUAL: 'Casual', RECURRENT: 'Recurrente', VIP: 'VIP' }
 const CATEGORY_COLORS = { CASUAL: Colors.textSecondary, RECURRENT: Colors.blood, VIP: Colors.plasma }
 
-export default function HomeScreen({ navigation }: Props) {
+// Static API (v7): useNavigation() ya sabe navegar fuera del tab (a
+// BloodTracker, Notifications, etc.) porque ReactNavigation.RootParamList
+// se aumenta globalmente en navigation/index.tsx — no hace falta CompositeScreenProps.
+export default function HomeScreen() {
+  const navigation = useNavigation()
   const { logout } = useAuthStore()
   const { profile, isLoading, fetchProfile } = useDonorStore()
 

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -20,9 +20,15 @@ class TokenCleanupTask {
   }
 }
 
+// @Global(): JwtAuthGuard/DonorJwtAuthGuard se usan en otros módulos vía @UseGuards()
+// sin importar AuthModule ahí. PassportModule "bare" (sin .register()) nunca provee
+// el token AuthModuleOptions — en @nestjs/core v12 el injector ya no tolera esto ni
+// siquiera con @Optional() en el guard, así que hay que registrarlo explícitamente
+// y exponerlo global, igual que CommonModule hace con EncryptionService.
+@Global()
 @Module({
   imports: [
-    PassportModule,
+    PassportModule.register({ session: false }),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -33,6 +39,6 @@ class TokenCleanupTask {
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, DonorJwtStrategy, TokenCleanupTask],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

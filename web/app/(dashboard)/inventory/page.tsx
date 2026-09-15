@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Droplets, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface BloodUnit {
   id: string
@@ -82,24 +83,70 @@ export default function InventoryPage() {
   const [bloodType, setBloodType] = useState('')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
+  const [actionId, setActionId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const LIMIT = 25
+  const requestSeq = useRef(0)
 
-  useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
+  function refetch() {
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
     if (status) params.set('status', status)
     if (productType) params.set('productType', productType)
     if (bloodType) params.set('bloodType', bloodType)
 
+    const seq = ++requestSeq.current
     setLoading(true)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/blood-units?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => { setUnits(data.units || []); setTotal(data.total || 0) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [page, status, productType, bloodType])
+    return apiFetch(`/blood-units?${params}`)
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}))
+        if (seq !== requestSeq.current) return // respuesta obsoleta, se descarta
+        if (!r.ok) {
+          setError(data.message || 'Error al cargar el inventario')
+          setUnits([])
+          setTotal(0)
+          return
+        }
+        setError(null)
+        setUnits(data.units || [])
+        setTotal(data.total || 0)
+      })
+      .catch(() => { if (seq === requestSeq.current) setError('Error de red.') })
+      .finally(() => { if (seq === requestSeq.current) setLoading(false) })
+  }
+
+  useEffect(() => { refetch() }, [page, status, productType, bloodType])
+
+  // Recolectada -> En análisis: crea el TestResult que Laboratorio espera.
+  async function startTest(unitId: string) {
+    setActionId(unitId)
+    try {
+      await apiFetch('/testing/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bloodUnitId: unitId, labType: 'OWN' }),
+      })
+      await refetch()
+    } finally {
+      setActionId(null)
+    }
+  }
+
+  // Cuarentena -> Aprobada, Aprobada -> Almacenada, Almacenada -> Descartada.
+  async function transition(unitId: string, newStatus: string) {
+    setActionId(unitId)
+    try {
+      await apiFetch(`/blood-units/${unitId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      await refetch()
+    } finally {
+      setActionId(null)
+      setConfirmId(null)
+    }
+  }
 
   const totalPages = Math.ceil(total / LIMIT)
 
@@ -163,14 +210,23 @@ export default function InventoryPage() {
               <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Donante</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ubicación</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vencimiento</th>
+              <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading ? (
-              <SkeletonRows cols={7} />
+              <SkeletonRows cols={8} />
+            ) : error ? (
+              <tr>
+                <td colSpan={8} className="py-20 text-center">
+                  <AlertTriangle size={36} className="mx-auto text-alert/60 mb-3" />
+                  <p className="text-alert text-sm font-medium">{error}</p>
+                  <button onClick={() => refetch()} className="text-xs text-primary hover:underline mt-1">Reintentar</button>
+                </td>
+              </tr>
             ) : units.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-20 text-center">
+                <td colSpan={8} className="py-20 text-center">
                   <Droplets size={36} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="text-muted-foreground/70 text-sm font-medium">Sin unidades con este filtro</p>
                   <p className="text-muted-foreground/40 text-xs mt-1">Prueba cambiando el estado o tipo de sangre</p>
@@ -216,6 +272,63 @@ export default function InventoryPage() {
                         {expDate && <span className="text-muted-foreground/70 text-xs ml-1">· {expDate}</span>}
                       </div>
                     ) : '—'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {unit.status === 'COLLECTED' && (
+                      <button
+                        onClick={() => startTest(unit.id)}
+                        disabled={actionId === unit.id}
+                        className="px-3 py-1.5 text-xs font-medium border border-input rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50"
+                      >
+                        {actionId === unit.id ? 'Enviando…' : 'Iniciar test'}
+                      </button>
+                    )}
+                    {unit.status === 'QUARANTINE' && (
+                      <button
+                        onClick={() => transition(unit.id, 'APPROVED')}
+                        disabled={actionId === unit.id}
+                        className="px-3 py-1.5 text-xs font-medium border border-input rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50"
+                      >
+                        {actionId === unit.id ? 'Enviando…' : 'Aprobar'}
+                      </button>
+                    )}
+                    {unit.status === 'APPROVED' && (
+                      <button
+                        onClick={() => transition(unit.id, 'STORED')}
+                        disabled={actionId === unit.id}
+                        className="px-3 py-1.5 text-xs font-medium border border-input rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50"
+                      >
+                        {actionId === unit.id ? 'Enviando…' : 'Almacenar'}
+                      </button>
+                    )}
+                    {unit.status === 'STORED' && (
+                      confirmId === unit.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">¿Descartar?</span>
+                          <button
+                            onClick={() => transition(unit.id, 'DISCARDED')}
+                            disabled={actionId === unit.id}
+                            className="px-2 py-1 text-xs font-medium bg-alert text-white rounded-md hover:bg-alert/90 transition-colors disabled:opacity-50"
+                          >
+                            {actionId === unit.id ? 'Enviando…' : 'Sí'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmId(null)}
+                            className="px-2 py-1 text-xs font-medium border border-input rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmId(unit.id)}
+                          className="px-3 py-1.5 text-xs font-medium border border-input rounded-md hover:bg-muted/50 transition-colors"
+                        >
+                          Descartar
+                        </button>
+                      )
+                    )}
+                    {!['COLLECTED', 'QUARANTINE', 'APPROVED', 'STORED'].includes(unit.status) && '—'}
                   </td>
                 </tr>
               )

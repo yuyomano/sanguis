@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CheckCircle2, XCircle, MessageSquare, Mail, Bell, Database, Server } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface SystemStatus {
   whatsapp: boolean
@@ -17,7 +18,7 @@ const INTEGRATIONS = [
     label: 'Meta WhatsApp Business',
     Icon: MessageSquare,
     color: '#25D366',
-    envVars: ['META_WHATSAPP_TOKEN', 'META_PHONE_NUMBER_ID'],
+    envVars: ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'],
     description: 'Mensajes automáticos a donantes — alertas, confirmaciones y eventos.',
     docsUrl: 'https://developers.facebook.com/docs/whatsapp/cloud-api',
   },
@@ -56,10 +57,7 @@ export default function SettingsPage() {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('sanguis_token')
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/admin/status`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/auth/admin/status')
       .then((r) => {
         if (!r.ok) throw new Error()
         return r.json()

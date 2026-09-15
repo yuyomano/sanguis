@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Search } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
@@ -11,9 +12,6 @@ const BLOOD_LABELS: Record<string, string> = {
 
 export default function NewBloodUnitPage() {
   const router = useRouter()
-  const api = process.env.NEXT_PUBLIC_API_URL
-  const token = () => localStorage.getItem('sanguis_token')
-  const authHeaders = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
 
   const [locations, setLocations] = useState<any[]>([])
   const [donorSearch, setDonorSearch] = useState('')
@@ -35,8 +33,7 @@ export default function NewBloodUnitPage() {
   })
 
   useEffect(() => {
-    const tok = token()
-    fetch(`${api}/blood-units/locations`, { headers: { Authorization: `Bearer ${tok}` } })
+    apiFetch('/blood-units/locations')
       .then(r => r.json()).then(setLocations).catch(() => {})
 
     // Auto-generate bag number
@@ -48,7 +45,7 @@ export default function NewBloodUnitPage() {
     const params = new URLSearchParams(window.location.search)
     const prefilledDonorId = params.get('donorId')
     if (prefilledDonorId) {
-      fetch(`${api}/donors/${prefilledDonorId}`, { headers: { Authorization: `Bearer ${tok}` } })
+      apiFetch(`/donors/${prefilledDonorId}`)
         .then(r => r.json())
         .then(donor => {
           if (donor?.id) {
@@ -65,9 +62,7 @@ export default function NewBloodUnitPage() {
     if (!donorSearch.trim()) return
     setSearching(true)
     try {
-      const res = await fetch(`${api}/donors?search=${encodeURIComponent(donorSearch)}&limit=5`, {
-        headers: { Authorization: `Bearer ${token()}` },
-      })
+      const res = await apiFetch(`/donors?search=${encodeURIComponent(donorSearch)}&limit=5`)
       const data = await res.json()
       setDonors(data.donors || [])
     } catch {}
@@ -104,9 +99,9 @@ export default function NewBloodUnitPage() {
     if (form.storageShelf) body.storageShelf = form.storageShelf
 
     try {
-      const res = await fetch(`${api}/blood-units`, {
+      const res = await apiFetch('/blood-units', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       if (!res.ok) {

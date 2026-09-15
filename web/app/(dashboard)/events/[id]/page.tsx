@@ -6,6 +6,7 @@ import {
   ArrowLeft, CalendarDays, MapPin, Users, Truck,
   CheckCircle, Clock, XCircle, Bell,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 const STATUS_EVENT_STYLES: Record<string, string> = {
   SCHEDULED: 'bg-blood-50 text-primary',
@@ -27,6 +28,9 @@ const BLOOD_LABELS: Record<string, string> = {
   A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
   AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
 }
+const PRODUCT_LABELS: Record<string, string> = {
+  WHOLE_BLOOD: 'Sangre completa', PLATELETS: 'Plaquetas', PLASMA: 'Plasma',
+}
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,12 +41,8 @@ export default function EventDetailPage() {
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null)
   const [confirmBroadcast, setConfirmBroadcast] = useState(false)
 
-  const token = () => localStorage.getItem('sanguis_token')
-
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${id}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    })
+    apiFetch(`/events/${id}`)
       .then(r => r.json())
       .then(setEvent)
       .finally(() => setLoading(false))
@@ -53,12 +53,9 @@ export default function EventDetailPage() {
     setConfirmBroadcast(false)
     setBroadcastResult(null)
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/notifications/events/${id}/broadcast`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token()}` } },
-      )
+      const res = await apiFetch(`/notifications/events/${id}/broadcast`, { method: 'POST' })
       const data = await res.json()
-      setBroadcastResult(`Notificación enviada a ${data.notified ?? '—'} donantes`)
+      setBroadcastResult(`Notificación enviada a ${data.sent ?? '—'} donantes${data.failed ? ` (${data.failed} fallidas)` : ''}`)
     } catch {
       setBroadcastResult('Error al enviar notificaciones')
     } finally {
@@ -182,7 +179,9 @@ export default function EventDetailPage() {
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Donante</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Contacto</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Producto</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Hora</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Estado</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">QR</th>
@@ -196,12 +195,15 @@ export default function EventDetailPage() {
                   <tr key={appt.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3">
                       <p className="text-sm font-medium text-foreground">{appt.donor?.name}</p>
-                      <p className="text-xs text-muted-foreground/70">{appt.donor?.phone}</p>
                     </td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground">{appt.donor?.phone}</td>
                     <td className="px-5 py-3">
                       <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white text-xs font-bold">
                         {BLOOD_LABELS[appt.donor?.bloodType] || '?'}
                       </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-foreground">
+                      {PRODUCT_LABELS[appt.productType] || appt.productType}
                     </td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">
                       {appt.scheduledTime

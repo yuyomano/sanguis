@@ -1,7 +1,11 @@
 import { PrismaClient, BloodType, IdType, DonorCategory, ProductType, BloodUnitStatus, EventType, EventStatus, CarrierType, DeliveryStatus, FinancialRecordType, FinancialCategory, TestLabType, NotificationType, NotificationStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { EncryptionService } from '../src/common/services/encryption.service';
 
 const prisma = new PrismaClient();
+// ponytail: fuera del contexto de Nest no hay ConfigService real — un shim que
+// lee process.env alcanza, EncryptionService solo llama a .get(key).
+const encryption = new EncryptionService({ get: (k: string) => process.env[k] } as any);
 
 async function main() {
   console.log('🌱 Iniciando seed de Sanguis...\n');
@@ -151,9 +155,12 @@ async function main() {
         id: d.id,
         name: d.name,
         idType: d.idType,
-        idNumber: d.idNumber,
-        phone: d.phone,
-        email: d.email ?? undefined,
+        idNumber: encryption.encrypt(d.idNumber),
+        idNumberHash: encryption.hash(d.idNumber),
+        phone: encryption.encrypt(d.phone),
+        phoneHash: encryption.hash(d.phone),
+        email: d.email ? encryption.encrypt(d.email) : undefined,
+        emailHash: d.email ? encryption.hash(d.email) : undefined,
         bloodType: d.bloodType,
         rhFactor: d.rhFactor,
         passwordHash: donorPass,

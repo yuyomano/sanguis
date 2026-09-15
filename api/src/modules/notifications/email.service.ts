@@ -57,4 +57,23 @@ export class EmailService {
       </div>
     `;
   }
+
+  buildEmergencyRequestHtml(hospitalName: string, city: string, bloodTypeLabel: string, productTypeLabel: string, unitsNeeded: number) {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #8E2436; padding: 20px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🩸 Sanguis — Convocatoria de emergencia</h1>
+        </div>
+        <div style="padding: 30px; background: #f9f9f9;">
+          <p>Se necesitan <strong>${unitsNeeded} unidad(es)</strong> de <strong>${productTypeLabel}</strong> tipo <strong>${bloodTypeLabel}</strong>.</p>
+          <p><strong>Hospital / centro:</strong> ${hospitalName}</p>
+          <p><strong>Ciudad:</strong> ${city}</p>
+          <p>Tu tipo de sangre es compatible. Tu donación puede salvar una vida hoy.</p>
+          <a href="https://app.sanguis.do/events" style="background: #8E2436; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px 0;">
+            Quiero donar
+          </a>
+        </div>
+      </div>
+    `;
+  }
 }

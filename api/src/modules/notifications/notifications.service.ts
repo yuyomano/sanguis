@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EncryptionService } from '../../common/services/encryption.service';
 import { WhatsappService } from './whatsapp.service';
 import { EmailService } from './email.service';
 import { FcmService } from './fcm.service';
-import { NotificationStatus, NotificationType, BloodType, ProductType } from '@prisma/client';
+import { NotificationStatus, NotificationType } from '@prisma/client';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class NotificationsService {
 
   constructor(
     private prisma: PrismaService,
+    private encryption: EncryptionService,
     private whatsapp: WhatsappService,
     private email: EmailService,
     private fcm: FcmService,
@@ -21,16 +23,25 @@ export class NotificationsService {
     const event = await this.prisma.donationEvent.findUnique({ where: { id: eventId } });
     if (!event) return;
 
-    const donors = await this.prisma.donor.findMany({
-      where: { isActive: true },
+    // notificationsEnabled: opt-out de broadcast no crítico; las alertas de emergencia
+    // (emergency-requests.service.ts) no se filtran por esto, siempre llegan a donantes compatibles.
+    const rawDonors = await this.prisma.donor.findMany({
+      where: { isActive: true, notificationsEnabled: true },
       select: { id: true, name: true, phone: true, email: true, referralCode: true, fcmToken: true },
     });
+    const donors = rawDonors.map((d) => ({
+      ...d,
+      phone: this.encryption.decrypt(d.phone),
+      email: d.email ? this.encryption.decrypt(d.email) : d.email,
+    }));
 
     const results = { sent: 0, failed: 0 };
     const formattedDate = dayjs(event.startDatetime).format('DD/MM/YYYY [a las] HH:mm');
 
-    // Push FCM a todos los donantes con token registrado
-    const tokens = donors.map((d) => d.fcmToken).filter(Boolean) as string[];
+    // Push FCM a todos los donantes con token registrado (fcmToken se guarda cifrado)
+    const tokens = donors
+      .map((d) => (d.fcmToken ? this.encryption.decrypt(d.fcmToken) : d.fcmToken))
+      .filter(Boolean) as string[];
     await this.fcm.sendToTokens(tokens, {
       title: `🩸 Nuevo evento: ${event.name}`,
       body: `${formattedDate} — ${event.locationAddress}`,
@@ -38,12 +49,22 @@ export class NotificationsService {
     });
 
     for (const donor of donors) {
+      // WhatsApp y email son canales independientes: si uno falla (p.ej. credenciales
+      // no configuradas) no debe impedir el intento del otro.
+      let whatsappOk = false;
       try {
         await this.whatsapp.sendTextMessage(
           donor.phone,
           `🩸 *Sanguis* — Evento de donación\n\n*${event.name}*\n📅 ${formattedDate}\n📍 ${event.locationAddress}\n\nTu donación puede salvar hasta 3 vidas. Reserva tu cita en la app Sanguis.\n\n¿Conoces a alguien? Comparte tu código: ${donor.referralCode}`,
         );
-        if (donor.email) {
+        whatsappOk = true;
+      } catch {
+        // se cuenta más abajo si el email también falla
+      }
+
+      let emailOk = false;
+      if (donor.email) {
+        try {
           await this.email.sendEmail(
             donor.email,
             `Evento de Donación: ${event.name}`,
@@ -54,7 +75,13 @@ export class NotificationsService {
               donor.referralCode,
             ),
           );
+          emailOk = true;
+        } catch {
+          // se cuenta más abajo si whatsapp también falla
         }
+      }
+
+      if (whatsappOk || emailOk) {
         await this.prisma.notification.create({
           data: {
             donorId: donor.id,
@@ -66,51 +93,12 @@ export class NotificationsService {
           },
         });
         results.sent++;
-      } catch {
+      } else {
         results.failed++;
       }
     }
 
     return results;
-  }
-
-  async previewEmergencyAlert(bloodType: BloodType, productType: ProductType) {
-    const compatibleTypes = this.getCompatibleDonors(bloodType, productType);
-    const donorCount = await this.prisma.donor.count({
-      where: { bloodType: { in: compatibleTypes }, isActive: true },
-    });
-    return { compatibleTypes, donorCount };
-  }
-
-  async sendEmergencyAlert(bloodType: BloodType, productType: ProductType, message: string, urgencyLevel = 1) {
-    const compatibleTypes = this.getCompatibleDonors(bloodType, productType);
-    const donors = await this.prisma.donor.findMany({
-      where: { bloodType: { in: compatibleTypes }, isActive: true },
-      select: { id: true, name: true, phone: true, fcmToken: true },
-    });
-
-    const alert = await this.prisma.emergencyAlert.create({
-      data: { bloodType, productType, message, targetReachedCount: donors.length },
-    });
-
-    const title = urgencyLevel >= 3 ? '🚨 ALERTA CRÍTICA — Sanguis' : urgencyLevel === 2 ? '⚠️ Alerta urgente — Sanguis' : '🔔 Convocatoria — Sanguis';
-
-    // FCM push (alta prioridad)
-    const tokens = donors.map((d) => d.fcmToken).filter(Boolean) as string[];
-    await this.fcm.sendToTokens(tokens, {
-      title,
-      body: message,
-      data: { type: 'emergency', urgencyLevel: String(urgencyLevel) },
-    });
-
-    // WhatsApp como canal de respaldo
-    for (const donor of donors) {
-      await this.whatsapp
-        .sendTextMessage(donor.phone, `${title}\n\n${message}\n\nTu tipo de sangre es compatible. ¿Puedes donar hoy?`)
-        .catch(() => {});
-    }
-
-    return { alertId: alert.id, notified: donors.length, compatibleTypes };
   }
 
   async findAll(page = 1, limit = 50) {
@@ -136,31 +124,4 @@ export class NotificationsService {
     return { notifications };
   }
 
-  private getCompatibleDonors(patientType: BloodType, productType?: ProductType): BloodType[] {
-    if (productType === ProductType.PLASMA) {
-      const plasma: Record<BloodType, BloodType[]> = {
-        O_NEGATIVE:  [BloodType.O_NEGATIVE, BloodType.O_POSITIVE],
-        O_POSITIVE:  [BloodType.O_POSITIVE, BloodType.O_NEGATIVE],
-        A_NEGATIVE:  [BloodType.A_NEGATIVE, BloodType.A_POSITIVE, BloodType.AB_NEGATIVE, BloodType.AB_POSITIVE],
-        A_POSITIVE:  [BloodType.A_POSITIVE, BloodType.A_NEGATIVE, BloodType.AB_POSITIVE, BloodType.AB_NEGATIVE],
-        B_NEGATIVE:  [BloodType.B_NEGATIVE, BloodType.B_POSITIVE, BloodType.AB_NEGATIVE, BloodType.AB_POSITIVE],
-        B_POSITIVE:  [BloodType.B_POSITIVE, BloodType.B_NEGATIVE, BloodType.AB_POSITIVE, BloodType.AB_NEGATIVE],
-        AB_NEGATIVE: [BloodType.AB_NEGATIVE, BloodType.AB_POSITIVE],
-        AB_POSITIVE: [BloodType.AB_POSITIVE, BloodType.AB_NEGATIVE],
-      };
-      return plasma[patientType] || [];
-    }
-    // GR / WHOLE_BLOOD / PLATELETS — reglas ABO+Rh estándar
-    const gr: Record<BloodType, BloodType[]> = {
-      O_NEGATIVE:  [BloodType.O_NEGATIVE],
-      O_POSITIVE:  [BloodType.O_POSITIVE, BloodType.O_NEGATIVE],
-      A_NEGATIVE:  [BloodType.A_NEGATIVE, BloodType.O_NEGATIVE],
-      A_POSITIVE:  [BloodType.A_POSITIVE, BloodType.A_NEGATIVE, BloodType.O_POSITIVE, BloodType.O_NEGATIVE],
-      B_NEGATIVE:  [BloodType.B_NEGATIVE, BloodType.O_NEGATIVE],
-      B_POSITIVE:  [BloodType.B_POSITIVE, BloodType.B_NEGATIVE, BloodType.O_POSITIVE, BloodType.O_NEGATIVE],
-      AB_NEGATIVE: [BloodType.AB_NEGATIVE, BloodType.A_NEGATIVE, BloodType.B_NEGATIVE, BloodType.O_NEGATIVE],
-      AB_POSITIVE: Object.values(BloodType) as BloodType[],
-    };
-    return gr[patientType] || [];
-  }
 }

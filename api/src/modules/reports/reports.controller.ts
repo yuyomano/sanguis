@@ -2,7 +2,10 @@ import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AdminRole } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ReportsService } from './reports.service';
 
 class LogTemperatureDto {
@@ -20,6 +23,10 @@ class LogTemperatureDto {
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
+  // Reporte regulatorio: solo administración (operativo — temperatura/inventario
+  // sigue abierto a cualquier admin autenticado, lo necesita el staff de campo).
+  @UseGuards(RolesGuard)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)
   @Get('sespas')
   @ApiOperation({ summary: 'Reporte SESPAS — resumen del período' })
   getSespas(@Query('from') from?: string, @Query('to') to?: string) {

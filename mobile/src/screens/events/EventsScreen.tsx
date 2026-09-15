@@ -3,12 +3,10 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import { api } from '../../services/api'
 import { Colors } from '../../theme/colors'
-import { DonationEvent, RootStackParamList } from '../../types'
-
-type Props = NativeStackScreenProps<RootStackParamList, 'MainTabs'>
+import { DonationEvent } from '../../types'
 
 const STATUS_COLORS: Record<string, string> = {
   SCHEDULED: Colors.blood, ACTIVE: Colors.success, COMPLETED: Colors.textMuted, CANCELLED: Colors.error,
@@ -17,7 +15,8 @@ const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Programado', ACTIVE: 'Activo', COMPLETED: 'Completado', CANCELLED: 'Cancelado',
 }
 
-export default function EventsScreen({ navigation }: Props) {
+export default function EventsScreen() {
+  const navigation = useNavigation()
   const [events, setEvents] = useState<DonationEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -25,8 +24,8 @@ export default function EventsScreen({ navigation }: Props) {
   async function load(isRefresh = false) {
     if (isRefresh) setRefreshing(true); else setLoading(true)
     try {
-      const { data } = await api.get('/donation-events')
-      setEvents(data.data ?? data)
+      const { data } = await api.get('/events/upcoming')
+      setEvents(data)
     } catch {} finally { setLoading(false); setRefreshing(false) }
   }
 
@@ -64,7 +63,7 @@ export default function EventsScreen({ navigation }: Props) {
                 <Text style={styles.eventName} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.locationRow}>
                   <MaterialIcons name="location-on" size={14} color={Colors.textSecondary} />
-                  <Text style={styles.locationText} numberOfLines={1}>{item.locationName}</Text>
+                  <Text style={styles.locationText} numberOfLines={1}>{item.locationAddress}</Text>
                 </View>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] ?? Colors.textMuted) + '20' }]}>
@@ -76,11 +75,9 @@ export default function EventsScreen({ navigation }: Props) {
             <View style={styles.dateRow}>
               <MaterialIcons name="event" size={14} color={Colors.textMuted} />
               <Text style={styles.dateText}>
-                {new Date(item.startDate).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {new Date(item.startDatetime).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
-              {item.targetUnits ? (
-                <Text style={styles.unitsText}> · Meta: {item.targetUnits} unidades</Text>
-              ) : null}
+              <Text style={styles.unitsText}> · {item.registeredCount}/{item.capacity} registrados</Text>
             </View>
           </TouchableOpacity>
         )}
